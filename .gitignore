@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+/tmp/mcp-browser-server.log
+
+# npm package
+*.tgz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Browser profile data
+chrome-mcp-profile/
+
+# Playwright
+.playwright/

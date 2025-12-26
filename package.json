@@ -1,0 +1,52 @@
+{
+  "name": "@ricardodeazambuja/browser-mcp-server",
+  "version": "1.0.0",
+  "description": "Universal browser automation MCP server using Playwright. Works with Antigravity, Claude Desktop, and any MCP client.",
+  "main": "browser-mcp-server-playwright.js",
+  "bin": {
+    "browser-mcp-server": "./browser-mcp-server-playwright.js"
+  },
+  "scripts": {
+    "start": "node browser-mcp-server-playwright.js",
+    "install-browsers": "npx playwright install chromium",
+    "test": "echo 'Testing MCP server...' && echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"test\",\"version\":\"1.0.0\"}}}' | node browser-mcp-server-playwright.js"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "browser-automation",
+    "playwright",
+    "claude",
+    "antigravity",
+    "web-automation",
+    "testing",
+    "scraping"
+  ],
+  "author": "Ricardo de Azambuja (https://ricardodeazambuja.com)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ricardodeazambuja/browser-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ricardodeazambuja/browser-mcp-server/issues"
+  },
+  "homepage": "https://github.com/ricardodeazambuja/browser-mcp-server#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "peerDependencies": {
+    "playwright": "^1.40.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  },
+  "files": [
+    "browser-mcp-server-playwright.js",
+    "README.md",
+    "LICENSE"
+  ]
+}
