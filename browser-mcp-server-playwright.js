@@ -640,7 +640,7 @@ rl.on('line', async (line) => {
         capabilities: { tools: {} },
         serverInfo: {
           name: 'browser-automation-playwright',
-          version: '1.0.0'
+          version: '1.0.1'
         }
       });
     } else if (request.method === 'notifications/initialized') {

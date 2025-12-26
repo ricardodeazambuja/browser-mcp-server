@@ -1,6 +1,6 @@
 {
   "name": "@ricardodeazambuja/browser-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal browser automation MCP server using Playwright. Works with Antigravity, Claude Desktop, and any MCP client.",
   "main": "browser-mcp-server-playwright.js",
   "bin": {
@@ -27,7 +27,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ricardodeazambuja/browser-mcp-server.git"
+    "url": "git+https://github.com/ricardodeazambuja/browser-mcp-server.git"
   },
   "bugs": {
     "url": "https://github.com/ricardodeazambuja/browser-mcp-server/issues"
