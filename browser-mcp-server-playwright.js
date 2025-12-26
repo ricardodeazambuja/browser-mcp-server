@@ -23,7 +23,7 @@
  *    - Falls back to: Playwright's Chromium (if installed)
  *    - Profile: /tmp/chrome-mcp-profile (configurable via MCP_BROWSER_PROFILE)
  *
- * @version 1.0.2
+ * @version 1.0.3
  * @author Ricardo de Azambuja
  * @license MIT
  */

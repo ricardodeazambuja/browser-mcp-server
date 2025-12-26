@@ -563,6 +563,11 @@ MIT License - see LICENSE file
 
 ## Changelog
 
+### v1.0.3 (2025-12-26)
+- ✅ **Documentation**: Updated README with v1.0.2 features and clearer installation instructions
+- ✅ **Code Comments**: Updated header to reflect universal compatibility and all features
+- ✅ **Package Files**: Included test suites and changelog in npm package
+
 ### v1.0.2 (2025-12-26)
 - ✅ **Smart Chrome Detection**: Automatically finds system Chrome/Chromium across Linux, macOS, Windows
 - ✅ **Three-Tier Strategy**: Antigravity Chrome → System Chrome → Playwright Chromium
