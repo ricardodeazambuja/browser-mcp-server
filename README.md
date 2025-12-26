@@ -6,21 +6,23 @@ A universal browser automation MCP server using Playwright. Control Chrome progr
 
 ## Features
 
+- ✅ **Smart Chrome Detection**: Automatically finds and uses system Chrome/Chromium
+- ✅ **Three-Tier Strategy**: Antigravity Chrome → System Chrome → Playwright Chromium
 - ✅ **Universal**: Works with Antigravity, Claude Desktop, and any MCP client
-- ✅ **Hybrid Mode**: Connects to existing Chrome OR launches its own
-- ✅ **Safe**: Isolated browser profile (won't touch your personal Chrome)
 - ✅ **16 Tools**: Navigate, click, type, screenshot, console logs, and more
+- ✅ **Auto-Install**: Playwright installed automatically via npm (no manual setup)
+- ✅ **Safe**: Isolated browser profile (won't touch your personal Chrome)
 - ✅ **Console Capture**: Debug JavaScript errors in real-time
 - ✅ **Session Recording**: Playwright traces with screenshots, DOM, and network activity
-- ✅ **Portable**: One codebase works everywhere
+- ✅ **Auto-Reconnect**: Handles browser crashes gracefully
 
 ## Quick Reference
 
 | Installation Method | Best For | Setup Time |
 |-------------------|----------|------------|
+| **NPM Package** | Production use, easy updates | 30 seconds |
 | **Clone Repository** | Development, contributing | 2 minutes |
 | **Direct Download** | Quick testing, minimal setup | 1 minute |
-| **NPM Package** (coming soon) | Production use, easy updates | 30 seconds |
 
 | MCP Client | Config File Location |
 |------------|---------------------|
@@ -31,7 +33,8 @@ A universal browser automation MCP server using Playwright. Control Chrome progr
 
 **Key Points:**
 - ✅ Requires Node.js >= 16.0.0
-- ✅ Must install Playwright separately
+- ✅ Playwright installs automatically (via npm) or manually (via git clone)
+- ✅ Automatically detects and uses system Chrome/Chromium
 - ✅ Uses absolute paths in config files
 - ✅ Isolated browser profile (won't touch personal Chrome)
 - ✅ Restart MCP client after config changes
@@ -40,40 +43,44 @@ A universal browser automation MCP server using Playwright. Control Chrome progr
 
 ### Installation
 
-#### Method 1: Clone Repository (Recommended)
+#### Method 1: NPM Package (Recommended)
+
+```bash
+# Install globally (Playwright installs automatically)
+npm install -g @ricardodeazambuja/browser-mcp-server
+
+# Or use directly with npx (no installation needed)
+npx @ricardodeazambuja/browser-mcp-server
+```
+
+**Note:** Playwright is installed automatically as a dependency. The server will automatically detect and use your system Chrome/Chromium if available, or fall back to Playwright's Chromium.
+
+#### Method 2: Clone Repository (For Development)
 
 ```bash
 # Clone the repository
 git clone https://github.com/ricardodeazambuja/browser-mcp-server.git
 cd browser-mcp-server
 
-# Install Playwright (one-time setup)
-npm install playwright
+# Install dependencies (includes Playwright)
+npm install
+
+# Optional: Install Chromium browser if not using system Chrome
 npx playwright install chromium
 ```
 
-#### Method 2: Direct Download (Single File)
+#### Method 3: Direct Download (Single File)
 
 ```bash
 # Download the main file directly (no git required)
 curl -o browser-mcp-server-playwright.js \
-  https://raw.githubusercontent.com/ricardodeazambuja/browser-mcp-server/master/browser-mcp-server-playwright.js
+  https://raw.githubusercontent.com/ricardodeazambuja/browser-mcp-server/main/browser-mcp-server-playwright.js
 
 # Install Playwright
 npm install playwright
+
+# Optional: Install Chromium browser if not using system Chrome
 npx playwright install chromium
-```
-
-#### Method 3: NPM Package (Coming Soon)
-
-Once published to npm:
-
-```bash
-# Install globally
-npm install -g @ricardodeazambuja/browser-mcp-server
-
-# Or use directly with npx (no installation needed)
-npx @ricardodeazambuja/browser-mcp-server
 ```
 
 ### Usage with Claude Desktop
@@ -92,7 +99,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
 }
 ```
 
-**Using NPM (when published):**
+**Using NPM:**
 ```json
 {
   "mcpServers": {
@@ -122,7 +129,7 @@ Add to `~/.gemini/antigravity/mcp_config.json`:
 }
 ```
 
-**Using NPM (when published):**
+**Using NPM:**
 ```json
 {
   "mcpServers": {
@@ -152,7 +159,7 @@ claude mcp add --transport stdio browser \
   -- node /absolute/path/to/browser-mcp-server-playwright.js
 ```
 
-**Using NPM (when published):**
+**Using NPM:**
 ```bash
 # Install using npx (no local installation needed)
 claude mcp add --transport stdio browser \
@@ -202,7 +209,7 @@ gemini mcp add -e MCP_BROWSER_PROFILE=/path/to/custom/profile browser \
   node /absolute/path/to/browser-mcp-server-playwright.js
 ```
 
-**Using NPM (when published):**
+**Using NPM:**
 ```bash
 # Install using npx (no local installation needed)
 gemini mcp add browser npx -y @ricardodeazambuja/browser-mcp-server
@@ -302,19 +309,25 @@ browser_wait_for_selector(".dashboard")
 
 ## How It Works
 
-### Hybrid Mode (Automatic)
+### Three-Tier Browser Strategy (Automatic)
 
-The server automatically detects your environment:
+The server automatically chooses the best browser option:
 
-**Antigravity Mode:**
+**Tier 1 - Antigravity Mode:**
 - Detects Chrome on port 9222
-- Connects to existing browser
+- Connects to existing Antigravity browser
 - Uses Antigravity's browser profile
 - No new browser window
 
-**Standalone Mode:**
-- No Chrome detected on port 9222
-- Launches new Chrome instance
+**Tier 2 - System Chrome/Chromium:**
+- Searches common locations: `/usr/bin/google-chrome`, `/usr/bin/chromium`, etc.
+- Uses system-installed Chrome if found
+- Saves ~275MB (no Chromium download needed)
+- Uses isolated profile (`/tmp/chrome-mcp-profile`)
+
+**Tier 3 - Playwright Chromium:**
+- Falls back to Playwright's bundled Chromium
+- Requires: `npx playwright install chromium`
 - Uses isolated profile (`/tmp/chrome-mcp-profile`)
 - New browser window appears
 
@@ -389,21 +402,41 @@ node browser-mcp-server-playwright.js
 
 ## Troubleshooting
 
-### "Playwright is not installed"
+### "No Chrome/Chromium browser found"
 
+The server provides helpful error messages with multiple solutions:
+
+**Option 1 - Install system Chrome/Chromium (Recommended):**
+```bash
+# Ubuntu/Debian
+sudo apt install google-chrome-stable
+# or
+sudo apt install chromium-browser
+
+# Fedora
+sudo dnf install google-chrome-stable
+
+# macOS
+brew install --cask google-chrome
+```
+
+**Option 2 - Install Playwright's Chromium:**
 ```bash
 npm install playwright
 npx playwright install chromium
 ```
 
-### "Cannot connect to Chrome"
-
-**For Antigravity:**
+**Option 3 - Use with Antigravity:**
 - Click the Chrome logo (top right) to launch browser
+- The MCP server will automatically connect
 
-**For Standalone:**
-- The server will auto-launch Chrome
-- Ensure Playwright is installed (see above)
+### Check Server Status
+
+Use the `browser_health_check` tool to verify:
+- Which mode is active (Antigravity / System Chrome / Playwright Chromium)
+- Playwright source
+- Browser profile location
+- Current page URL
 
 ### Check Server Status
 
@@ -476,8 +509,8 @@ Check `/tmp/mcp-browser-server.log` for detailed logs:
 
 ### Requirements
 - Node.js >= 16.0.0
-- Playwright (peer dependency)
-- Chrome/Chromium browser
+- Playwright ^1.57.0 (installed automatically via npm)
+- Chrome/Chromium browser (automatically detected, or uses Playwright's Chromium)
 
 ### Platforms
 - ✅ Linux
@@ -529,6 +562,20 @@ MIT License - see LICENSE file
 - 📧 Contact: Via GitHub Issues
 
 ## Changelog
+
+### v1.0.2 (2025-12-26)
+- ✅ **Smart Chrome Detection**: Automatically finds system Chrome/Chromium across Linux, macOS, Windows
+- ✅ **Three-Tier Strategy**: Antigravity Chrome → System Chrome → Playwright Chromium
+- ✅ **Auto-Install**: Playwright now installed automatically as dependency (via npm)
+- ✅ **Better Errors**: Helpful error messages with platform-specific installation instructions
+- ✅ **Resource Efficient**: Uses system Chrome when available (~275MB savings)
+- ✅ **Test Suites**: Includes comprehensive test scripts
+- ✅ **Auto-Reconnect**: Improved browser disconnection handling
+- ✅ **Documentation**: Added detailed CHANGELOG-v1.0.2.md
+
+### v1.0.1 (2025-12-26)
+- ✅ Fixed CLI bin path for npm installation
+- ✅ Improved package configuration
 
 ### v1.0.0 (2025-12-26)
 - ✅ Initial release

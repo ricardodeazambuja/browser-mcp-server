@@ -1,17 +1,31 @@
 #!/usr/bin/env node
 
 /**
- * Browser Automation MCP Server for Antigravity (Playwright Edition)
+ * Universal Browser Automation MCP Server (Playwright Edition)
  *
- * This MCP server provides 13 browser automation tools by connecting to
- * Antigravity's Chrome instance that runs with remote debugging on port 9222.
+ * A Model Context Protocol server providing 16 browser automation tools
+ * for AI agents. Works with Antigravity, Claude Desktop, and any MCP client.
  *
- * Antigravity launches Chrome with:
- *   --remote-debugging-port=9222
- *   --user-data-dir=~/.gemini/antigravity-browser-profile
+ * KEY FEATURES:
+ * - Smart Chrome Detection: Automatically finds and uses system Chrome/Chromium
+ * - Three-Tier Strategy: Antigravity Chrome > System Chrome > Playwright Chromium
+ * - 16 Tools: Navigate, click, type, screenshot, console capture, and more
+ * - Isolated Profile: Uses /tmp/chrome-mcp-profile (won't touch personal Chrome)
+ * - Auto-Reconnect: Handles browser crashes and disconnections gracefully
  *
- * This server uses the same Playwright installation as browser_subagent,
- * allowing seamless integration with Antigravity's browser ecosystem.
+ * MODES:
+ * 1. Antigravity Mode: Connects to existing Chrome on port 9222
+ *    - Detects: Chrome with --remote-debugging-port=9222
+ *    - Profile: ~/.gemini/antigravity-browser-profile
+ *
+ * 2. Standalone Mode: Launches own Chrome instance
+ *    - Searches: /usr/bin/google-chrome, /usr/bin/chromium, etc.
+ *    - Falls back to: Playwright's Chromium (if installed)
+ *    - Profile: /tmp/chrome-mcp-profile (configurable via MCP_BROWSER_PROFILE)
+ *
+ * @version 1.0.2
+ * @author Ricardo de Azambuja
+ * @license MIT
  */
 
 const fs = require('fs');
@@ -38,10 +52,10 @@ function loadPlaywright() {
   if (playwrightError) throw playwrightError;
 
   const sources = [
-    // 1. Antigravity's Go-based Playwright
-    { path: `${process.env.HOME}/.cache/ms-playwright-go/1.50.1/package`, name: 'Antigravity Go Playwright' },
-    // 2. Standard npm Playwright (local)
+    // 1. Standard npm Playwright (local) - prioritize for standalone mode
     { path: 'playwright', name: 'npm Playwright (local)' },
+    // 2. Antigravity's Go-based Playwright - fallback for Antigravity mode
+    { path: `${process.env.HOME}/.cache/ms-playwright-go/1.50.1/package`, name: 'Antigravity Go Playwright' },
     // 3. Global npm Playwright
     { path: `${process.env.HOME}/.npm-global/lib/node_modules/playwright`, name: 'npm Playwright (global)' }
   ];
@@ -87,8 +101,60 @@ let page = null;
 let consoleLogs = [];
 let consoleListening = false;
 
+// Find Chrome executable in common locations
+function findChromeExecutable() {
+  const { execSync } = require('child_process');
+
+  const commonPaths = [
+    // Linux
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/snap/bin/chromium',
+    // macOS
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    // Windows (via WSL or similar)
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
+  ];
+
+  // First try common paths
+  for (const path of commonPaths) {
+    if (fs.existsSync(path)) {
+      debugLog(`Found Chrome at: ${path}`);
+      return path;
+    }
+  }
+
+  // Try using 'which' on Unix-like systems
+  if (process.platform !== 'win32') {
+    try {
+      const result = execSync('which google-chrome || which chromium || which chromium-browser', { encoding: 'utf8' }).trim();
+      if (result && fs.existsSync(result)) {
+        debugLog(`Found Chrome via 'which': ${result}`);
+        return result;
+      }
+    } catch (e) {
+      debugLog(`'which' command failed: ${e.message}`);
+    }
+  }
+
+  debugLog('No system Chrome found');
+  return null;
+}
+
 // Connect to existing Chrome OR launch new instance (hybrid mode)
 async function connectToBrowser() {
+  // Check if browser is disconnected or closed
+  if (browser && (!browser.isConnected || !browser.isConnected())) {
+    debugLog('Browser connection lost, resetting...');
+    browser = null;
+    context = null;
+    page = null;
+  }
+
   if (!browser) {
     try {
       // Load Playwright (will throw if not installed)
@@ -119,14 +185,13 @@ async function connectToBrowser() {
 
       debugLog(`Browser profile: ${profileDir}`);
 
-      browser = await pw.chromium.launch({
+      // Try to find system Chrome first
+      const chromeExecutable = findChromeExecutable();
+      const launchOptions = {
         headless: false,
         args: [
           // CRITICAL: Remote debugging
           '--remote-debugging-port=9222',
-
-          // CRITICAL: Isolated profile (don't touch user's personal Chrome!)
-          `--user-data-dir=${profileDir}`,
 
           // IMPORTANT: Skip first-run experience
           '--no-first-run',
@@ -143,24 +208,67 @@ async function connectToBrowser() {
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding'
         ]
-      });
+      };
 
-      context = await browser.newContext();
-      page = await context.newPage();
+      // If system Chrome found, use it; otherwise use Playwright's Chromium
+      if (chromeExecutable) {
+        debugLog(`Using system Chrome/Chromium: ${chromeExecutable}`);
+        launchOptions.executablePath = chromeExecutable;
+      } else {
+        debugLog('No system Chrome/Chromium found. Attempting to use Playwright Chromium...');
+      }
+
+      // Use launchPersistentContext to properly handle user data directory
+      try {
+        context = await pw.chromium.launchPersistentContext(profileDir, launchOptions);
+      } catch (launchError) {
+        // If launch failed and no system Chrome was found, provide helpful error
+        if (!chromeExecutable && launchError.message.includes('Executable doesn\'t exist')) {
+          debugLog('Playwright Chromium not installed and no system Chrome found');
+          throw new Error(
+            '❌ No Chrome/Chromium browser found!\n\n' +
+            'This MCP server needs a Chrome or Chromium browser to work.\n\n' +
+            'Option 1 - Install Chrome/Chromium on your system:\n' +
+            '  • Ubuntu/Debian: sudo apt install google-chrome-stable\n' +
+            '  • Ubuntu/Debian: sudo apt install chromium-browser\n' +
+            '  • Fedora: sudo dnf install google-chrome-stable\n' +
+            '  • macOS: brew install --cask google-chrome\n' +
+            '  • Or download from: https://www.google.com/chrome/\n\n' +
+            'Option 2 - Install Playwright\'s Chromium:\n' +
+            '  npm install playwright\n' +
+            '  npx playwright install chromium\n\n' +
+            'Option 3 - Use with Antigravity:\n' +
+            '  Open Antigravity and click the Chrome logo (top right) to start the browser.\n' +
+            '  This MCP server will automatically connect to it.\n'
+          );
+        }
+        throw launchError;
+      }
+
+      // With launchPersistentContext, browser is the context
+      browser = context;
+      const pages = context.pages();
+      page = pages.length > 0 ? pages[0] : await context.newPage();
 
       debugLog('✅ Successfully launched new Chrome instance (Standalone mode)');
 
     } catch (error) {
       debugLog(`Failed to connect/launch Chrome: ${error.message}`);
-      const errorMsg =
-        '❌ Cannot start browser.\n\n' +
-        'To fix this:\n' +
-        '1. In Antigravity: Click the Chrome logo (top right) to "Open Browser"\n' +
-        '2. Standalone mode: Ensure Playwright is installed:\n' +
-        '   npm install playwright\n' +
-        '   npx playwright install chromium\n\n' +
-        `Error: ${error.message}`;
-      throw new Error(errorMsg);
+
+      // If error wasn't already formatted nicely, provide generic error
+      if (!error.message.startsWith('❌')) {
+        const errorMsg =
+          '❌ Cannot start browser.\n\n' +
+          'To fix this:\n' +
+          '1. In Antigravity: Click the Chrome logo (top right) to "Open Browser"\n' +
+          '2. Standalone mode: Install Chrome/Chromium or Playwright\'s Chromium:\n' +
+          '   npm install playwright\n' +
+          '   npx playwright install chromium\n\n' +
+          `Error: ${error.message}`;
+        throw new Error(errorMsg);
+      }
+
+      throw error;
     }
   }
   return { browser, context, page };
@@ -640,7 +748,7 @@ rl.on('line', async (line) => {
         capabilities: { tools: {} },
         serverInfo: {
           name: 'browser-automation-playwright',
-          version: '1.0.1'
+          version: '1.0.2'
         }
       });
     } else if (request.method === 'notifications/initialized') {

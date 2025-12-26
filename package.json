@@ -1,6 +1,6 @@
 {
   "name": "@ricardodeazambuja/browser-mcp-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Universal browser automation MCP server using Playwright. Works with Antigravity, Claude Desktop, and any MCP client.",
   "main": "browser-mcp-server-playwright.js",
   "bin": {
@@ -36,17 +36,15 @@
   "engines": {
     "node": ">=16.0.0"
   },
-  "peerDependencies": {
-    "playwright": "^1.40.0"
-  },
-  "peerDependenciesMeta": {
-    "playwright": {
-      "optional": true
-    }
+  "dependencies": {
+    "playwright": "^1.57.0"
   },
   "files": [
     "browser-mcp-server-playwright.js",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG-v1.0.2.md",
+    "test-mcp.js",
+    "test-browser-automation.js"
   ]
 }
