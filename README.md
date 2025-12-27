@@ -2,14 +2,14 @@
 
 A universal browser automation MCP server using Playwright. Control Chrome programmatically through the Model Context Protocol.
 
-**16 powerful browser automation tools** including navigation, clicking, typing, screenshots, console capture, and session recording.
+**36 powerful browser automation tools** including multi-tab management, media monitoring/control, low-level interaction, and session recording.
 
 ## Features
 
 - ✅ **Smart Chrome Detection**: Automatically finds and uses system Chrome/Chromium
 - ✅ **Three-Tier Strategy**: Antigravity Chrome → System Chrome → Playwright Chromium
 - ✅ **Universal**: Works with Antigravity, Claude Desktop, and any MCP client
-- ✅ **16 Tools**: Navigate, click, type, screenshot, console logs, and more
+- ✅ **36 Tools**: Media control, multi-tab, pixel-based interaction, and more
 - ✅ **Auto-Install**: Playwright installed automatically via npm (no manual setup)
 - ✅ **Safe**: Isolated browser profile (won't touch your personal Chrome)
 - ✅ **Console Capture**: Debug JavaScript errors in real-time
@@ -252,31 +252,57 @@ gemini mcp add --timeout 30000 browser node /path/to/browser-mcp-server-playwrig
 gemini mcp add --trust browser node /path/to/browser-mcp-server-playwright.js
 ```
 
-## Available Tools (16)
+## Available Tools (36)
+
+### Multi-Page Management ⭐ NEW
+1. **browser_list_pages()** - List all open tabs/pages
+2. **browser_new_page(url?)** - Open a new tab
+3. **browser_switch_page(index)** - Switch active tab
+4. **browser_close_page(index?)** - Close a tab
+
+### Media Awareness & Control ⭐ NEW
+5. **browser_get_media_summary()** - List all audio/video elements with state
+6. **browser_get_audio_analysis(durationMs?, selector?)** - Analyze audio output (volume, spectrum)
+7. **browser_control_media(selector, action, value?)** - Play, pause, mute, seek
 
 ### Navigation & Interaction
-1. **browser_navigate(url)** - Navigate to a URL
-2. **browser_click(selector)** - Click an element
-3. **browser_type(selector, text)** - Type text into an input
-4. **browser_scroll(x?, y?)** - Scroll the page
+8. **browser_navigate(url)** - Navigate to a URL
+9. **browser_click(selector)** - Click an element (selector-based)
+10. **browser_type(selector, text)** - Type text into an input
+11. **browser_scroll(x?, y?)** - Scroll the page (generic)
+12. **browser_reload()** - Reload current page
+13. **browser_go_back()** - Navigate back
+14. **browser_go_forward()** - Navigate forward
+15. **browser_wait(ms)** - Pause execution
+
+### Low-Level Interaction
+16. **browser_mouse_move(x, y)** - Move mouse to pixel coordinates
+17. **browser_mouse_click(x?, y?, button?, count?)** - Click at pixel coordinates
+18. **browser_mouse_drag(fromX, fromY, toX, toY)** - Drag and drop
+19. **browser_mouse_wheel(deltaX, deltaY)** - Scroll mouse wheel
+20. **browser_press_key(key)** - Send keyboard event (e.g. "Enter")
 
 ### Information Gathering
-5. **browser_screenshot(fullPage?)** - Capture screenshot
-6. **browser_get_text(selector)** - Get text from element
-7. **browser_get_dom(selector?)** - Get DOM structure
-8. **browser_evaluate(code)** - Execute JavaScript
+21. **browser_screenshot(fullPage?)** - Capture screenshot
+22. **browser_get_text(selector)** - Get text from element
+23. **browser_get_dom(selector?)** - Get DOM structure
+24. **browser_read_page()** - Get page metadata (title, URL)
+25. **browser_evaluate(code)** - Execute JavaScript
 
-### Console Debugging ⭐ NEW
-9. **browser_console_start(level?)** - Start capturing console logs
-10. **browser_console_get(filter?)** - Get captured logs
-11. **browser_console_clear()** - Clear logs and stop
+### Console Debugging
+26. **browser_console_start(level?)** - Start capturing logs
+27. **browser_console_get(filter?)** - Get captured logs
+28. **browser_console_clear()** - Clear logs and stop
 
-### Advanced
-12. **browser_wait_for_selector(selector, timeout?)** - Wait for element
-13. **browser_resize_window(width, height)** - Resize browser window
-14. **browser_start_video_recording(path?)** - Start recording session (Playwright traces)
-15. **browser_stop_video_recording()** - Stop and save recording
-16. **browser_health_check()** - Verify browser connection
+### Advanced Interaction
+29. **browser_hover(selector)** - Hover over element
+30. **browser_focus(selector)** - Focus element
+31. **browser_select(selector, values)** - Select dropdown options
+32. **browser_wait_for_selector(selector, timeout?)** - Wait for element
+33. **browser_resize_window(width, height)** - Resize window
+34. **browser_start_video_recording(path?)** - Start session recording
+35. **browser_stop_video_recording()** - Stop and save recording
+36. **browser_health_check()** - Verify browser connection
 
 ## Examples
 
@@ -297,14 +323,30 @@ browser_console_get(filter: "error")
 // Shows: ❌ [ERROR] Uncaught TypeError: ...
 ```
 
-### Automate Form Submission
+### Media Monitoring & Control
 ```javascript
 // Agent uses:
-browser_navigate("https://example.com/login")
-browser_type("#username", "user@example.com")
-browser_type("#password", "secret")
-browser_click("#login-button")
-browser_wait_for_selector(".dashboard")
+browser_navigate("https://youtube.com/watch?v=...")
+browser_get_media_summary() // See active video state
+browser_control_media(selector: "video", action: "play")
+browser_get_audio_analysis(durationMs: 2000) // "Hear" the volume
+```
+
+### Multi-Tab Automation
+```javascript
+// Agent uses:
+browser_navigate("https://wikipedia.org")
+browser_new_page("https://google.com")
+browser_list_pages() // Shows 2 pages
+browser_switch_page(0) // Back to Wikipedia
+```
+
+### Pixel-Based Interaction
+```javascript
+// Agent uses:
+browser_mouse_move(500, 300)
+browser_mouse_click(button: "right")
+browser_press_key("Enter")
 ```
 
 ## How It Works
@@ -562,6 +604,17 @@ MIT License - see LICENSE file
 - 📧 Contact: Via GitHub Issues
 
 ## Changelog
+
+### v1.2.0 (2025-12-27) ⭐ NEW
+- ✅ **Media Awareness**: Added audio/video inspection, spectral analysis, and control tools (36 tools total)
+- ✅ **Tool**: `browser_get_media_summary`, `browser_get_audio_analysis`, `browser_control_media`
+
+### v1.1.0 (2025-12-27)
+- ✅ **Tool Parity**: Achieved parity with `browser-subagent` (33 tools total)
+- ✅ **Multi-Page**: Added support for multiple browser tabs/pages
+- ✅ **Low-Level Control**: Added keyboard/mouse event tools (pixel-based)
+- ✅ **Utilities**: Added `reload`, `go_back`, `go_forward`, `wait`, `hover`, `focus`, `select`
+- ✅ **Testing**: Updated test suites to include new tools
 
 ### v1.0.3 (2025-12-26)
 - ✅ **Documentation**: Updated README with v1.0.2 features and clearer installation instructions

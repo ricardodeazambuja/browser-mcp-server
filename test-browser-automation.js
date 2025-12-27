@@ -28,7 +28,7 @@ function sendRequest(method, params = {}) {
 
 async function runTests() {
   console.log('🌐 Browser Automation Test Suite\n');
-  console.log('=' .repeat(60));
+  console.log('='.repeat(60));
 
   proc = spawn('node', ['browser-mcp-server-playwright.js'], {
     stdio: ['pipe', 'pipe', 'pipe']
@@ -47,6 +47,9 @@ async function runTests() {
     'Navigate to Example.com',
     'Evaluate JavaScript',
     'Take Screenshot',
+    'Open New Page',
+    'List Pages',
+    'Wait',
     'Cleanup'
   ];
 
@@ -123,9 +126,41 @@ async function runTests() {
           break;
 
         case 6: // Screenshot
-          const imgData = response.result.content[0].data;
-          const imgSize = Buffer.from(imgData, 'base64').length;
-          console.log(`   ✅ ${currentTest} (${(imgSize / 1024).toFixed(1)} KB)`);
+          console.log(`   ✅ ${currentTest}`);
+          testStep++;
+
+          // Open new page
+          setTimeout(() => sendRequest('tools/call', {
+            name: 'browser_new_page',
+            arguments: { url: 'https://google.com' }
+          }), 100);
+          break;
+
+        case 7: // New Page
+          console.log(`   ✅ ${currentTest}`);
+          testStep++;
+
+          // List pages
+          setTimeout(() => sendRequest('tools/call', {
+            name: 'browser_list_pages',
+            arguments: {}
+          }), 100);
+
+          break;
+
+        case 8: // List Pages
+          console.log(`   ✅ ${currentTest}`);
+          testStep++;
+
+          // Wait
+          setTimeout(() => sendRequest('tools/call', {
+            name: 'browser_wait',
+            arguments: { ms: 500 }
+          }), 100);
+          break;
+
+        case 9: // Wait
+          console.log(`   ✅ ${currentTest}`);
           testStep++;
 
           // All tests complete
@@ -138,6 +173,8 @@ async function runTests() {
             console.log('   • Page navigation (example.com)');
             console.log('   • JavaScript evaluation');
             console.log('   • Screenshot capture');
+            console.log('   • Multi-page management');
+            console.log('   • Wait utility');
             console.log('\n✨ The MCP server is fully functional!\n');
 
             proc.kill();

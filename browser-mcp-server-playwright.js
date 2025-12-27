@@ -23,7 +23,7 @@
  *    - Falls back to: Playwright's Chromium (if installed)
  *    - Profile: /tmp/chrome-mcp-profile (configurable via MCP_BROWSER_PROFILE)
  *
- * @version 1.0.3
+ * @version 1.2.0
  * @author Ricardo de Azambuja
  * @license MIT
  */
@@ -97,6 +97,9 @@ let browser = null;
 let context = null;
 let page = null;
 
+// Multi-page management
+let activePageIndex = 0;
+
 // Console log capture
 let consoleLogs = [];
 let consoleListening = false;
@@ -168,109 +171,105 @@ async function connectToBrowser() {
 
         const contexts = browser.contexts();
         context = contexts.length > 0 ? contexts[0] : await browser.newContext();
-        const pages = context.pages();
-        page = pages.length > 0 ? pages[0] : await context.newPage();
-
-        debugLog('Successfully connected to Chrome');
-        return { browser, context, page };
       } catch (connectError) {
         debugLog(`Could not connect to existing Chrome: ${connectError.message}`);
       }
 
       // STRATEGY 2: Launch our own Chrome (Standalone mode)
-      debugLog('No existing Chrome found. Launching new instance...');
+      if (!browser) {
+        debugLog('No existing Chrome found. Launching new instance...');
 
-      const profileDir = process.env.MCP_BROWSER_PROFILE ||
-                        `${os.tmpdir()}/chrome-mcp-profile`;
+        const profileDir = process.env.MCP_BROWSER_PROFILE ||
+          `${os.tmpdir()}/chrome-mcp-profile`;
 
-      debugLog(`Browser profile: ${profileDir}`);
+        debugLog(`Browser profile: ${profileDir}`);
 
-      // Try to find system Chrome first
-      const chromeExecutable = findChromeExecutable();
-      const launchOptions = {
-        headless: false,
-        args: [
-          // CRITICAL: Remote debugging
-          '--remote-debugging-port=9222',
+        // Try to find system Chrome first
+        const chromeExecutable = findChromeExecutable();
+        const launchOptions = {
+          headless: false,
+          args: [
+            // CRITICAL: Remote debugging
+            '--remote-debugging-port=9222',
 
-          // IMPORTANT: Skip first-run experience
-          '--no-first-run',
-          '--no-default-browser-check',
-          '--disable-fre',
+            // IMPORTANT: Skip first-run experience
+            '--no-first-run',
+            '--no-default-browser-check',
+            '--disable-fre',
 
-          // STABILITY: Reduce popups and background activity
-          '--disable-features=TranslateUI,OptGuideOnDeviceModel',
-          '--disable-sync',
-          '--disable-component-update',
-          '--disable-background-networking',
-          '--disable-breakpad',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding'
-        ]
-      };
+            // STABILITY: Reduce popups and background activity
+            '--disable-features=TranslateUI,OptGuideOnDeviceModel',
+            '--disable-sync',
+            '--disable-component-update',
+            '--disable-background-networking',
+            '--disable-breakpad',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
+          ]
+        };
 
-      // If system Chrome found, use it; otherwise use Playwright's Chromium
-      if (chromeExecutable) {
-        debugLog(`Using system Chrome/Chromium: ${chromeExecutable}`);
-        launchOptions.executablePath = chromeExecutable;
-      } else {
-        debugLog('No system Chrome/Chromium found. Attempting to use Playwright Chromium...');
-      }
-
-      // Use launchPersistentContext to properly handle user data directory
-      try {
-        context = await pw.chromium.launchPersistentContext(profileDir, launchOptions);
-      } catch (launchError) {
-        // If launch failed and no system Chrome was found, provide helpful error
-        if (!chromeExecutable && launchError.message.includes('Executable doesn\'t exist')) {
-          debugLog('Playwright Chromium not installed and no system Chrome found');
-          throw new Error(
-            '❌ No Chrome/Chromium browser found!\n\n' +
-            'This MCP server needs a Chrome or Chromium browser to work.\n\n' +
-            'Option 1 - Install Chrome/Chromium on your system:\n' +
-            '  • Ubuntu/Debian: sudo apt install google-chrome-stable\n' +
-            '  • Ubuntu/Debian: sudo apt install chromium-browser\n' +
-            '  • Fedora: sudo dnf install google-chrome-stable\n' +
-            '  • macOS: brew install --cask google-chrome\n' +
-            '  • Or download from: https://www.google.com/chrome/\n\n' +
-            'Option 2 - Install Playwright\'s Chromium:\n' +
-            '  npm install playwright\n' +
-            '  npx playwright install chromium\n\n' +
-            'Option 3 - Use with Antigravity:\n' +
-            '  Open Antigravity and click the Chrome logo (top right) to start the browser.\n' +
-            '  This MCP server will automatically connect to it.\n'
-          );
+        // If system Chrome found, use it; otherwise use Playwright's Chromium
+        if (chromeExecutable) {
+          debugLog(`Using system Chrome/Chromium: ${chromeExecutable}`);
+          launchOptions.executablePath = chromeExecutable;
+        } else {
+          debugLog('No system Chrome/Chromium found. Attempting to use Playwright Chromium...');
         }
-        throw launchError;
+
+        // Use launchPersistentContext to properly handle user data directory
+        try {
+          context = await pw.chromium.launchPersistentContext(profileDir, launchOptions);
+          browser = context;
+        } catch (launchError) {
+          // If launch failed and no system Chrome was found, provide helpful error
+          if (!chromeExecutable && launchError.message.includes('Executable doesn\'t exist')) {
+            debugLog('Playwright Chromium not installed and no system Chrome found');
+            throw new Error(
+              '❌ No Chrome/Chromium browser found!\n\n' +
+              'This MCP server needs a Chrome or Chromium browser to work.\n\n' +
+              'Option 1 - Install Chrome/Chromium on your system:\n' +
+              '  • Ubuntu/Debian: sudo apt install google-chrome-stable\n' +
+              '  • Ubuntu/Debian: sudo apt install chromium-browser\n' +
+              '  • Fedora: sudo dnf install google-chrome-stable\n' +
+              '  • macOS: brew install --cask google-chrome\n' +
+              '  • Or download from: https://www.google.com/chrome/\n\n' +
+              'Option 2 - Install Playwright\'s Chromium:\n' +
+              '  npm install playwright\n' +
+              '  npx playwright install chromium\n\n' +
+              'Option 3 - Use with Antigravity:\n' +
+              '  Open Antigravity and click the Chrome logo (top right) to start the browser.\n' +
+              '  This MCP server will automatically connect to it.\n'
+            );
+          }
+          throw launchError;
+        }
+        debugLog('✅ Successfully launched new Chrome instance (Standalone mode)');
       }
-
-      // With launchPersistentContext, browser is the context
-      browser = context;
-      const pages = context.pages();
-      page = pages.length > 0 ? pages[0] : await context.newPage();
-
-      debugLog('✅ Successfully launched new Chrome instance (Standalone mode)');
 
     } catch (error) {
       debugLog(`Failed to connect/launch Chrome: ${error.message}`);
-
-      // If error wasn't already formatted nicely, provide generic error
-      if (!error.message.startsWith('❌')) {
-        const errorMsg =
-          '❌ Cannot start browser.\n\n' +
-          'To fix this:\n' +
-          '1. In Antigravity: Click the Chrome logo (top right) to "Open Browser"\n' +
-          '2. Standalone mode: Install Chrome/Chromium or Playwright\'s Chromium:\n' +
-          '   npm install playwright\n' +
-          '   npx playwright install chromium\n\n' +
-          `Error: ${error.message}`;
-        throw new Error(errorMsg);
-      }
-
+      // Re-throw formatted error
       throw error;
     }
   }
+
+  // Ensure we have a context and a page
+  if (!context) {
+    const contexts = browser.contexts();
+    context = contexts.length > 0 ? contexts[0] : await browser.newContext();
+  }
+
+  const pages = context.pages();
+  if (pages.length === 0) {
+    page = await context.newPage();
+    activePageIndex = 0;
+  } else {
+    // Ensure activePageIndex is within bounds
+    if (activePageIndex >= pages.length) activePageIndex = pages.length - 1;
+    page = pages[activePageIndex];
+  }
+
   return { browser, context, page };
 }
 
@@ -480,6 +479,257 @@ const tools = [
       additionalProperties: false,
       $schema: 'http://json-schema.org/draft-07/schema#'
     }
+  },
+  {
+    name: 'browser_get_media_summary',
+    description: 'Get a summary of all audio and video elements on the page',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_get_audio_analysis',
+    description: 'Analyze audio output for a duration to detect sound vs silence and frequencies',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        durationMs: { type: 'number', description: 'Duration to analyze in ms', default: 2000 },
+        selector: { type: 'string', description: 'Optional selector to specific media element' }
+      },
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_control_media',
+    description: 'Control a media element (play, pause, seek, mute)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: { type: 'string', description: 'Selector for the audio/video element' },
+        action: { type: 'string', enum: ['play', 'pause', 'mute', 'unmute', 'seek'] },
+        value: { type: 'number', description: 'Value for seek action (time in seconds)' }
+      },
+      required: ['selector', 'action'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  // --- NEW TOOLS FOR PARITY ---
+  {
+    name: 'browser_list_pages',
+    description: 'List all open browser pages (tabs)',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_new_page',
+    description: 'Open a new browser page (tab)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'Optional URL to navigate to' }
+      },
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_switch_page',
+    description: 'Switch to a different browser page (tab)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        index: { type: 'number', description: 'The index of the page to switch to' }
+      },
+      required: ['index'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_close_page',
+    description: 'Close a browser page (tab)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        index: { type: 'number', description: 'The index of the page to close. If not provided, closes current page.' }
+      },
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_read_page',
+    description: 'Read the content and metadata of the current page',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_press_key',
+    description: 'Send a keyboard event (press a key)',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'The key to press (e.g., "Enter", "Escape", "Control+A")' }
+      },
+      required: ['key'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_mouse_move',
+    description: 'Move the mouse to specific coordinates',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        x: { type: 'number', description: 'X coordinate' },
+        y: { type: 'number', description: 'Y coordinate' }
+      },
+      required: ['x', 'y'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_mouse_click',
+    description: 'Click the mouse at specific coordinates or on current position',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        x: { type: 'number', description: 'Optional X coordinate' },
+        y: { type: 'number', description: 'Optional Y coordinate' },
+        button: { type: 'string', description: 'left, right, or middle', default: 'left' },
+        clickCount: { type: 'number', description: '1 for single click, 2 for double click', default: 1 }
+      },
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_mouse_drag',
+    description: 'Drag from one position to another',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fromX: { type: 'number', description: 'Starting X coordinate' },
+        fromY: { type: 'number', description: 'Starting Y coordinate' },
+        toX: { type: 'number', description: 'Ending X coordinate' },
+        toY: { type: 'number', description: 'Ending Y coordinate' }
+      },
+      required: ['fromX', 'fromY', 'toX', 'toY'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_mouse_wheel',
+    description: 'Scroll the mouse wheel',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        deltaX: { type: 'number', description: 'Horizontal scroll amount' },
+        deltaY: { type: 'number', description: 'Vertical scroll amount' }
+      },
+      required: ['deltaX', 'deltaY'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_hover',
+    description: 'Hover over an element',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: { type: 'string', description: 'Playwright selector for the element' }
+      },
+      required: ['selector'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_focus',
+    description: 'Focus an element',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: { type: 'string', description: 'Playwright selector for the element' }
+      },
+      required: ['selector'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_select',
+    description: 'Select options in a dropdown',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        selector: { type: 'string', description: 'Playwright selector for the select element' },
+        values: { type: 'array', items: { type: 'string' }, description: 'Values to select' }
+      },
+      required: ['selector', 'values'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_reload',
+    description: 'Reload the current page',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_go_back',
+    description: 'Navigate back in history',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_go_forward',
+    description: 'Navigate forward in history',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
+  },
+  {
+    name: 'browser_wait',
+    description: 'Pause execution for a duration',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ms: { type: 'number', description: 'Milliseconds to wait' }
+      },
+      required: ['ms'],
+      additionalProperties: false,
+      $schema: 'http://json-schema.org/draft-07/schema#'
+    }
   }
 ];
 
@@ -636,12 +886,12 @@ async function executeTool(name, args) {
           content: [{
             type: 'text',
             text: `✅ Browser automation is fully functional!\n\n` +
-                  `Mode: ${mode}\n` +
-                  `✅ Playwright: ${playwrightPath || 'loaded'}\n` +
-                  `✅ Chrome: Port 9222\n` +
-                  `✅ Profile: ${browserProfile}\n` +
-                  `✅ Current page: ${url}\n\n` +
-                  `All 16 browser tools are ready to use!`
+              `Mode: ${mode}\n` +
+              `✅ Playwright: ${playwrightPath || 'loaded'}\n` +
+              `✅ Chrome: Port 9222\n` +
+              `✅ Profile: ${browserProfile}\n` +
+              `✅ Current page: ${url}\n\n` +
+              `All 16 browser tools are ready to use!`
           }]
         };
 
@@ -719,6 +969,372 @@ async function executeTool(name, args) {
           }]
         };
 
+
+
+      // --- MEDIA AWARENESS TOOLS ---
+      case 'browser_get_media_summary':
+        const mediaState = await page.evaluate(() => {
+          const elements = Array.from(document.querySelectorAll('audio, video'));
+          return elements.map((el, index) => {
+            // Calculate buffered ranges
+            const buffered = [];
+            for (let i = 0; i < el.buffered.length; i++) {
+              buffered.push([el.buffered.start(i), el.buffered.end(i)]);
+            }
+
+            return {
+              index,
+              tagName: el.tagName.toLowerCase(),
+              id: el.id || null,
+              src: el.currentSrc || el.src,
+              state: {
+                paused: el.paused,
+                muted: el.muted,
+                ended: el.ended,
+                loop: el.loop,
+                playbackRate: el.playbackRate,
+                volume: el.volume
+              },
+              timing: {
+                currentTime: el.currentTime,
+                duration: el.duration
+              },
+              buffer: {
+                readyState: el.readyState,
+                buffered
+              },
+              videoSpecs: el.tagName === 'VIDEO' ? {
+                videoWidth: el.videoWidth,
+                videoHeight: el.videoHeight
+              } : undefined
+            };
+          });
+        });
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(mediaState, null, 2)
+          }]
+        };
+
+      case 'browser_get_audio_analysis':
+        const duration = args.durationMs || 2000;
+        const selector = args.selector;
+
+        const analysis = await page.evaluate(async ({ duration, selector }) => {
+          return new Promise(async (resolve) => {
+            try {
+              // 1. Find element
+              let element;
+              if (selector) {
+                element = document.querySelector(selector);
+              } else {
+                // Pick the first one playing or just the first one
+                const all = Array.from(document.querySelectorAll('audio, video'));
+                element = all.find(e => !e.paused) || all[0];
+              }
+
+              if (!element) return resolve({ error: 'No media element found' });
+
+              // 2. Setup AudioContext (handle browser policies)
+              const CtxClass = window.AudioContext || window.webkitAudioContext;
+              if (!CtxClass) return resolve({ error: 'Web Audio API not supported' });
+
+              const ctx = new CtxClass();
+
+              // Resume context if suspended (common in browsers)
+              if (ctx.state === 'suspended') await ctx.resume();
+
+              // 3. Create Source & Analyzer
+              // Note: MediaElementSource requires the element to allow CORS if cross-origin
+              let source;
+              try {
+                source = ctx.createMediaElementSource(element);
+              } catch (e) {
+                // If already connected or tainted, this might fail. 
+                // We can try to reconnect or just capture current data if available.
+                return resolve({ error: `Cannot connect to media source: ${e.message}. (Check CORS headers)` });
+              }
+
+              const analyzer = ctx.createAnalyser();
+              analyzer.fftSize = 256;
+              const bufferLength = analyzer.frequencyBinCount;
+              const dataArray = new Uint8Array(bufferLength);
+
+              source.connect(analyzer);
+              analyzer.connect(ctx.destination);
+
+              // 4. Collect samples over duration
+              const samples = [];
+              const startTime = Date.now();
+              const interval = setInterval(() => {
+                analyzer.getByteFrequencyData(dataArray);
+
+                // Calculate instant stats
+                let sum = 0;
+                let max = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                  const val = dataArray[i];
+                  sum += val;
+                  if (val > max) max = val;
+                }
+                const avg = sum / bufferLength;
+
+                samples.push({ avg, max, data: Array.from(dataArray) });
+
+                if (Date.now() - startTime >= duration) {
+                  clearInterval(interval);
+                  finalize();
+                }
+              }, 100); // 10 samples per second
+
+              function finalize() {
+                // Clean up
+                try {
+                  source.disconnect();
+                  analyzer.disconnect();
+                  ctx.close();
+                } catch (e) { }
+
+                // Aggregate
+                if (samples.length === 0) return resolve({ status: 'No samples' });
+
+                const totalAvg = samples.reduce((a, b) => a + b.avg, 0) / samples.length;
+                const grandMax = Math.max(...samples.map(s => s.max));
+                const isSilent = grandMax < 5; // Low threshold
+
+                // Bucket frequencies (Simple approximation)
+                // 128 bins over Nyquist (e.g. 24kHz). 
+                // Bass (0-4), Mid (5-40), Treble (41-127) roughly
+                const bassSum = samples.reduce((acc, s) => {
+                  return acc + s.data.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
+                }, 0) / samples.length;
+
+                const midSum = samples.reduce((acc, s) => {
+                  return acc + s.data.slice(5, 40).reduce((a, b) => a + b, 0) / 35;
+                }, 0) / samples.length;
+
+                const trebleSum = samples.reduce((acc, s) => {
+                  return acc + s.data.slice(40).reduce((a, b) => a + b, 0) / 88;
+                }, 0) / samples.length;
+
+                const activeFrequencies = [];
+                if (bassSum > 20) activeFrequencies.push('bass');
+                if (midSum > 20) activeFrequencies.push('mid');
+                if (trebleSum > 20) activeFrequencies.push('treble');
+
+                resolve({
+                  element: { tagName: element.tagName, id: element.id, src: element.currentSrc },
+                  isSilent,
+                  averageVolume: Math.round(totalAvg),
+                  peakVolume: grandMax,
+                  activeFrequencies
+                });
+              }
+
+            } catch (e) {
+              resolve({ error: e.message });
+            }
+          });
+        }, { duration, selector });
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(analysis, null, 2)
+          }]
+        };
+
+      case 'browser_control_media':
+        const controlResult = await page.evaluate(async ({ selector, action, value }) => {
+          const el = document.querySelector(selector);
+          if (!el) return { error: `Element not found: ${selector}` };
+          if (!(el instanceof HTMLMediaElement)) return { error: 'Element is not audio/video' };
+
+          try {
+            switch (action) {
+              case 'play':
+                await el.play();
+                return { status: 'playing' };
+              case 'pause':
+                el.pause();
+                return { status: 'paused' };
+              case 'mute':
+                el.muted = true;
+                return { status: 'muted' };
+              case 'unmute':
+                el.muted = false;
+                return { status: 'unmuted' };
+              case 'seek':
+                if (typeof value !== 'number') return { error: 'Seek value required' };
+                el.currentTime = value;
+                return { status: 'seeked', newTime: el.currentTime };
+              default:
+                return { error: `Unknown media action: ${action}` };
+            }
+          } catch (e) {
+            return { error: e.message };
+          }
+        }, args);
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(controlResult, null, 2)
+          }]
+        };
+
+
+      // --- NEW TOOL HANDLERS ---
+      case 'browser_list_pages':
+        const pages = context.pages();
+        const pageList = pages.map((p, i) => ({
+          index: i,
+          title: 'Unknown', // Will update below
+          url: p.url(),
+          isActive: i === activePageIndex
+        }));
+
+        // Try to get titles (async)
+        await Promise.all(pages.map(async (p, i) => {
+          try {
+            pageList[i].title = await p.title();
+          } catch (e) { }
+        }));
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(pageList, null, 2)
+          }]
+        };
+
+      case 'browser_new_page':
+        const newPage = await context.newPage();
+        activePageIndex = context.pages().length - 1;
+        if (args.url) {
+          await newPage.goto(args.url, { waitUntil: 'domcontentloaded' });
+        }
+        return {
+          content: [{
+            type: 'text',
+            text: `Opened new page at index ${activePageIndex}${args.url ? ` and navigated to ${args.url}` : ''}`
+          }]
+        };
+
+      case 'browser_switch_page':
+        const allPages = context.pages();
+        if (args.index < 0 || args.index >= allPages.length) {
+          throw new Error(`Invalid page index: ${args.index}. Total pages: ${allPages.length}`);
+        }
+        activePageIndex = args.index;
+        return {
+          content: [{
+            type: 'text',
+            text: `Switched to page index ${activePageIndex}`
+          }]
+        };
+
+      case 'browser_close_page':
+        const targetPages = context.pages();
+        const closeIdx = args.index !== undefined ? args.index : activePageIndex;
+
+        if (closeIdx < 0 || closeIdx >= targetPages.length) {
+          throw new Error(`Invalid page index: ${closeIdx}`);
+        }
+
+        await targetPages[closeIdx].close();
+
+        // Adjust active index if needed
+        if (activePageIndex >= context.pages().length) {
+          activePageIndex = Math.max(0, context.pages().length - 1);
+        }
+
+        return {
+          content: [{
+            type: 'text',
+            text: `Closed page ${closeIdx}. Active page is now ${activePageIndex}.`
+          }]
+        };
+
+      case 'browser_read_page':
+        const metadata = {
+          title: await page.title(),
+          url: page.url(),
+          viewport: page.viewportSize(),
+          contentLength: (await page.content()).length
+        };
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(metadata, null, 2)
+          }]
+        };
+
+      case 'browser_press_key':
+        await page.keyboard.press(args.key);
+        return { content: [{ type: 'text', text: `Pressed key: ${args.key}` }] };
+
+      case 'browser_mouse_move':
+        await page.mouse.move(args.x, args.y);
+        return { content: [{ type: 'text', text: `Moved mouse to ${args.x}, ${args.y}` }] };
+
+      case 'browser_mouse_click':
+        if (args.x !== undefined && args.y !== undefined) {
+          await page.mouse.click(args.x, args.y, {
+            button: args.button || 'left',
+            clickCount: args.clickCount || 1
+          });
+          return { content: [{ type: 'text', text: `Clicked at ${args.x}, ${args.y}` }] };
+        } else {
+          // Click at current position
+          // Note: page.mouse.click() without coords clicks at current position
+          await page.mouse.click(undefined, undefined, {
+            button: args.button || 'left',
+            clickCount: args.clickCount || 1
+          });
+          return { content: [{ type: 'text', text: `Clicked at current mouse position` }] };
+        }
+
+      case 'browser_mouse_drag':
+        await page.mouse.move(args.fromX, args.fromY);
+        await page.mouse.down();
+        await page.mouse.move(args.toX, args.toY);
+        await page.mouse.up();
+        return { content: [{ type: 'text', text: `Dragged from ${args.fromX},${args.fromY} to ${args.toX},${args.toY}` }] };
+
+      case 'browser_mouse_wheel':
+        await page.mouse.wheel(args.deltaX, args.deltaY);
+        return { content: [{ type: 'text', text: `Scrolled wheel by ${args.deltaX}, ${args.deltaY}` }] };
+
+      case 'browser_hover':
+        await page.hover(args.selector);
+        return { content: [{ type: 'text', text: `Hovered over ${args.selector}` }] };
+
+      case 'browser_focus':
+        await page.focus(args.selector);
+        return { content: [{ type: 'text', text: `Focused ${args.selector}` }] };
+
+      case 'browser_select':
+        await page.selectOption(args.selector, args.values);
+        return { content: [{ type: 'text', text: `Selected values in ${args.selector}` }] };
+
+      case 'browser_reload':
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        return { content: [{ type: 'text', text: `Reloaded page` }] };
+
+      case 'browser_go_back':
+        await page.goBack({ waitUntil: 'domcontentloaded' });
+        return { content: [{ type: 'text', text: `Navigated back` }] };
+
+      case 'browser_go_forward':
+        await page.goForward({ waitUntil: 'domcontentloaded' });
+        return { content: [{ type: 'text', text: `Navigated forward` }] };
+
+      case 'browser_wait':
+        await new Promise(resolve => setTimeout(resolve, args.ms));
+        return { content: [{ type: 'text', text: `Waited for ${args.ms}ms` }] };
+
       default:
         throw new Error(`Unknown tool: ${name}`);
     }
@@ -748,7 +1364,7 @@ rl.on('line', async (line) => {
         capabilities: { tools: {} },
         serverInfo: {
           name: 'browser-automation-playwright',
-          version: '1.0.2'
+          version: '1.2.0'
         }
       });
     } else if (request.method === 'notifications/initialized') {
