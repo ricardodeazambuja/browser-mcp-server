@@ -30,62 +30,14 @@
 
 const fs = require('fs');
 const os = require('os');
-const logFile = `${os.tmpdir()}/mcp-browser-server.log`;
+const readline = require('readline');
 
-// Helper to log debug info
-function debugLog(msg) {
-  const timestamp = new Date().toISOString();
-  fs.appendFileSync(logFile, `${timestamp} - ${msg}\n`);
-}
+// Import utilities
+const { debugLog, loadPlaywright, getPlaywrightPath, findChromeExecutable } = require('./src/utils');
 
 debugLog('Server starting...');
 debugLog(`HOME: ${process.env.HOME}`);
 debugLog(`CWD: ${process.cwd()}`);
-
-let playwright = null;
-let playwrightError = null;
-let playwrightPath = null;
-
-// Try to load Playwright from multiple sources
-function loadPlaywright() {
-  if (playwright) return playwright;
-  if (playwrightError) throw playwrightError;
-
-  const sources = [
-    // 1. Standard npm Playwright (local) - prioritize for standalone mode
-    { path: 'playwright', name: 'npm Playwright (local)' },
-    // 2. Antigravity's Go-based Playwright - fallback for Antigravity mode
-    { path: `${process.env.HOME}/.cache/ms-playwright-go/1.50.1/package`, name: 'Antigravity Go Playwright' },
-    // 3. Global npm Playwright
-    { path: `${process.env.HOME}/.npm-global/lib/node_modules/playwright`, name: 'npm Playwright (global)' }
-  ];
-
-  for (const source of sources) {
-    try {
-      debugLog(`Trying to load Playwright from: ${source.path}`);
-      playwright = require(source.path);
-      playwrightPath = source.path;
-      debugLog(`✅ Playwright loaded successfully: ${source.name}`);
-      return playwright;
-    } catch (error) {
-      debugLog(`❌ Could not load from ${source.path}: ${error.message}`);
-    }
-  }
-
-  // None worked
-  playwrightError = new Error(
-    '❌ Playwright is not installed.\n\n' +
-    'To install Playwright:\n' +
-    '1. In Antigravity: Click the Chrome logo (top right) to "Open Browser" - this installs Playwright automatically\n' +
-    '2. Standalone mode: Run:\n' +
-    '   npm install playwright\n' +
-    '   npx playwright install chromium\n\n' +
-    `Tried locations:\n${sources.map(s => `  - ${s.path}`).join('\n')}`
-  );
-  throw playwrightError;
-}
-
-const readline = require('readline');
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -104,49 +56,6 @@ let activePageIndex = 0;
 let consoleLogs = [];
 let consoleListening = false;
 
-// Find Chrome executable in common locations
-function findChromeExecutable() {
-  const { execSync } = require('child_process');
-
-  const commonPaths = [
-    // Linux
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/snap/bin/chromium',
-    // macOS
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/Applications/Chromium.app/Contents/MacOS/Chromium',
-    // Windows (via WSL or similar)
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
-  ];
-
-  // First try common paths
-  for (const path of commonPaths) {
-    if (fs.existsSync(path)) {
-      debugLog(`Found Chrome at: ${path}`);
-      return path;
-    }
-  }
-
-  // Try using 'which' on Unix-like systems
-  if (process.platform !== 'win32') {
-    try {
-      const result = execSync('which google-chrome || which chromium || which chromium-browser', { encoding: 'utf8' }).trim();
-      if (result && fs.existsSync(result)) {
-        debugLog(`Found Chrome via 'which': ${result}`);
-        return result;
-      }
-    } catch (e) {
-      debugLog(`'which' command failed: ${e.message}`);
-    }
-  }
-
-  debugLog('No system Chrome found');
-  return null;
-}
 
 // Connect to existing Chrome OR launch new instance (hybrid mode)
 async function connectToBrowser() {
@@ -887,7 +796,7 @@ async function executeTool(name, args) {
             type: 'text',
             text: `✅ Browser automation is fully functional!\n\n` +
               `Mode: ${mode}\n` +
-              `✅ Playwright: ${playwrightPath || 'loaded'}\n` +
+              `✅ Playwright: ${getPlaywrightPath() || 'loaded'}\n` +
               `✅ Chrome: Port 9222\n` +
               `✅ Profile: ${browserProfile}\n` +
               `✅ Current page: ${url}\n\n` +
