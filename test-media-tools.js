@@ -1,95 +1,77 @@
+#!/usr/bin/env node
+
+/**
+ * Media Awareness Test Suite
+ * Tests browser_get_media_summary, browser_control_media, browser_get_audio_analysis
+ */
+
 const { spawn } = require('child_process');
 const path = require('path');
 const readline = require('readline');
 
-// Start the server
 const serverPath = path.join(__dirname, 'browser-mcp-server-playwright.js');
-console.log(`Launching server: ${serverPath}`);
-
-const proc = spawn('node', [serverPath], {
-    stdio: ['pipe', 'pipe', 'pipe']
-});
+const proc = spawn('node', [serverPath], { stdio: ['pipe', 'pipe', 'pipe'] });
 
 proc.stderr.on('data', (data) => {
-    console.log(`[SERVER STDERR] ${data.toString()}`);
+    console.error(data.toString().trim());
 });
 
 proc.on('error', (err) => {
-    console.error('[SERVER ERROR]', err);
+    console.error('Server error:', err);
+    process.exit(1);
 });
 
-proc.on('close', (code) => {
-    console.log(`[SERVER EXITED] code ${code}`);
-});
-
-const rl = readline.createInterface({
-    input: proc.stdout,
-    terminal: false
-});
+const rl = readline.createInterface({ input: proc.stdout, terminal: false });
 
 let messageId = 1;
 let testStep = 0;
 
 function sendRequest(method, params) {
-    const request = {
-        jsonrpc: '2.0',
-        id: messageId++,
-        method,
-        params
-    };
-    const str = JSON.stringify(request) + '\n';
-    console.log(`[SENDING] ${method}`); // Debug log
-    proc.stdin.write(str);
+    const request = { jsonrpc: '2.0', id: messageId++, method, params };
+    proc.stdin.write(JSON.stringify(request) + '\n');
 }
 
-console.log('🌐 Media Awareness Test Suite');
-console.log('============================================================\n');
+console.log('🌐 Media Awareness Test Suite\n');
 
 rl.on('line', (line) => {
-    // console.log(`[RECEIVED] ${line}`); // Verbose debug
     try {
         const response = JSON.parse(line);
-
-        // Log helpful messages
         if (response.method === 'notifications/resources/list_changed') return;
         if (response.error) {
-            console.error('❌ Error response:', JSON.stringify(response.error, null, 2));
+            console.error('❌ Error:', response.error.message);
             process.exit(1);
         }
-
         if (response.result && response.id) {
             handleResponse(response);
         }
     } catch (e) {
-        if (!line.startsWith('{')) console.log(`[SERVER LOG] ${line}`);
+        // Ignore non-JSON lines
     }
 });
 
 function handleResponse(response) {
     const currentTest = steps[testStep];
+    if (!currentTest) return;
 
-    if (currentTest) {
-        console.log(`➡️  ${currentTest.name}`);
+    console.log(`➡️  ${currentTest.name}`);
 
-        try {
-            currentTest.verify(response);
-            console.log(`   ✅ Passed\n`);
-        } catch (err) {
-            console.error(`   ❌ Failed: ${err.message}`);
-            process.exit(1);
-        }
+    try {
+        currentTest.verify(response);
+        console.log(`   ✅ Passed\n`);
+    } catch (err) {
+        console.error(`   ❌ Failed: ${err.message}`);
+        process.exit(1);
+    }
 
-        testStep++;
-        if (testStep < steps.length) {
-            const nextTest = steps[testStep];
-            setTimeout(() => {
-                sendRequest(nextTest.method, nextTest.params());
-            }, 500);
-        } else {
-            console.log('🎉 All media tests passed!');
-            proc.kill();
-            process.exit(0);
-        }
+    testStep++;
+    if (testStep < steps.length) {
+        setTimeout(() => {
+            sendRequest(steps[testStep].method, steps[testStep].params());
+        }, 500);
+    } else {
+        console.log('🎉 All media tests passed!');
+        proc.kill();
+        process.exit(0);
     }
 }
 
@@ -105,18 +87,8 @@ const steps = [
         verify: () => { }
     },
     {
-        name: 'Start Console Capture',
-        method: 'tools/call',
-        params: () => ({
-            name: 'browser_console_start',
-            arguments: {}
-        }),
-        verify: () => { }
-    },
-    {
         name: 'Navigate to Local Media Test',
         method: 'tools/call',
-
         params: () => ({
             name: 'browser_navigate',
             arguments: { url: 'file://' + path.join(__dirname, 'test-media.html') }
@@ -128,12 +100,12 @@ const steps = [
         method: 'tools/call',
         params: () => ({
             name: 'browser_wait_for_selector',
-            arguments: { selector: 'audio', timeout: 30000 }
+            arguments: { selector: 'audio', timeout: 10000 }
         }),
         verify: () => { }
     },
     {
-        name: 'Get Initial Media Summary',
+        name: 'Get Media Summary',
         method: 'tools/call',
         params: () => ({
             name: 'browser_get_media_summary',
@@ -141,7 +113,7 @@ const steps = [
         }),
         verify: (res) => {
             const summary = JSON.parse(res.result.content[0].text);
-            console.log('      Found media elements:', summary.length);
+            console.log(`      Found ${summary.length} media element(s)`);
             if (!Array.isArray(summary)) throw new Error('Result is not an array');
         }
     },
@@ -158,11 +130,11 @@ const steps = [
         }
     },
     {
-        name: 'Wait for Audio',
+        name: 'Wait for Playback',
         method: 'tools/call',
         params: () => ({
             name: 'browser_wait',
-            arguments: { ms: 2000 }
+            arguments: { ms: 1000 }
         }),
         verify: () => { }
     },
@@ -171,12 +143,11 @@ const steps = [
         method: 'tools/call',
         params: () => ({
             name: 'browser_get_audio_analysis',
-            arguments: { durationMs: 1000 }
+            arguments: { durationMs: 500 }
         }),
         verify: (res) => {
             const analysis = JSON.parse(res.result.content[0].text);
-            console.log('      Analysis:', analysis);
-            if (typeof analysis.averageVolume !== 'number') throw new Error('Invalid analysis format');
+            if (typeof analysis.averageVolume !== 'number') throw new Error('Invalid analysis');
         }
     },
     {
@@ -193,8 +164,5 @@ const steps = [
     }
 ];
 
-// Start first test
-console.log('Starting tests...');
-setTimeout(() => {
-    sendRequest(steps[0].method, steps[0].params());
-}, 1000);
+// Start tests
+setTimeout(() => sendRequest(steps[0].method, steps[0].params()), 500);

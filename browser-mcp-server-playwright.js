@@ -3,13 +3,13 @@
 /**
  * Universal Browser Automation MCP Server (Playwright Edition)
  *
- * A Model Context Protocol server providing 16 browser automation tools
+ * A Model Context Protocol server providing 36 browser automation tools
  * for AI agents. Works with Antigravity, Claude Desktop, and any MCP client.
  *
  * KEY FEATURES:
  * - Smart Chrome Detection: Automatically finds and uses system Chrome/Chromium
  * - Three-Tier Strategy: Antigravity Chrome > System Chrome > Playwright Chromium
- * - 16 Tools: Navigate, click, type, screenshot, console capture, and more
+ * - 36 Tools: Multi-tab, media control, mouse/keyboard, screenshots, and more
  * - Isolated Profile: Uses /tmp/chrome-mcp-profile (won't touch personal Chrome)
  * - Auto-Reconnect: Handles browser crashes and disconnections gracefully
  *
@@ -518,7 +518,7 @@ const tools = [
       $schema: 'http://json-schema.org/draft-07/schema#'
     }
   },
-  // --- NEW TOOLS FOR PARITY ---
+  // Multi-page management tools
   {
     name: 'browser_list_pages',
     description: 'List all open browser pages (tabs)',
@@ -969,9 +969,7 @@ async function executeTool(name, args) {
           }]
         };
 
-
-
-      // --- MEDIA AWARENESS TOOLS ---
+      // Media awareness tools
       case 'browser_get_media_summary':
         const mediaState = await page.evaluate(() => {
           const elements = Array.from(document.querySelectorAll('audio, video'));
