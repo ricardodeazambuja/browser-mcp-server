@@ -35,6 +35,9 @@ const readline = require('readline');
 // Import utilities
 const { debugLog, loadPlaywright, getPlaywrightPath, findChromeExecutable } = require('./src/utils');
 
+// Import browser module
+const { connectToBrowser, getBrowserState, setActivePageIndex } = require('./src/browser');
+
 debugLog('Server starting...');
 debugLog(`HOME: ${process.env.HOME}`);
 debugLog(`CWD: ${process.cwd()}`);
@@ -45,142 +48,10 @@ const rl = readline.createInterface({
   terminal: false
 });
 
-let browser = null;
-let context = null;
-let page = null;
-
-// Multi-page management
-let activePageIndex = 0;
-
 // Console log capture
 let consoleLogs = [];
 let consoleListening = false;
 
-
-// Connect to existing Chrome OR launch new instance (hybrid mode)
-async function connectToBrowser() {
-  // Check if browser is disconnected or closed
-  if (browser && (!browser.isConnected || !browser.isConnected())) {
-    debugLog('Browser connection lost, resetting...');
-    browser = null;
-    context = null;
-    page = null;
-  }
-
-  if (!browser) {
-    try {
-      // Load Playwright (will throw if not installed)
-      const pw = loadPlaywright();
-
-      // STRATEGY 1: Try to connect to existing Chrome (Antigravity mode)
-      try {
-        debugLog('Attempting to connect to Chrome on port 9222...');
-        browser = await pw.chromium.connectOverCDP('http://localhost:9222');
-        debugLog('✅ Connected to existing Chrome (Antigravity mode)');
-
-        const contexts = browser.contexts();
-        context = contexts.length > 0 ? contexts[0] : await browser.newContext();
-      } catch (connectError) {
-        debugLog(`Could not connect to existing Chrome: ${connectError.message}`);
-      }
-
-      // STRATEGY 2: Launch our own Chrome (Standalone mode)
-      if (!browser) {
-        debugLog('No existing Chrome found. Launching new instance...');
-
-        const profileDir = process.env.MCP_BROWSER_PROFILE ||
-          `${os.tmpdir()}/chrome-mcp-profile`;
-
-        debugLog(`Browser profile: ${profileDir}`);
-
-        // Try to find system Chrome first
-        const chromeExecutable = findChromeExecutable();
-        const launchOptions = {
-          headless: false,
-          args: [
-            // CRITICAL: Remote debugging
-            '--remote-debugging-port=9222',
-
-            // IMPORTANT: Skip first-run experience
-            '--no-first-run',
-            '--no-default-browser-check',
-            '--disable-fre',
-
-            // STABILITY: Reduce popups and background activity
-            '--disable-features=TranslateUI,OptGuideOnDeviceModel',
-            '--disable-sync',
-            '--disable-component-update',
-            '--disable-background-networking',
-            '--disable-breakpad',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding'
-          ]
-        };
-
-        // If system Chrome found, use it; otherwise use Playwright's Chromium
-        if (chromeExecutable) {
-          debugLog(`Using system Chrome/Chromium: ${chromeExecutable}`);
-          launchOptions.executablePath = chromeExecutable;
-        } else {
-          debugLog('No system Chrome/Chromium found. Attempting to use Playwright Chromium...');
-        }
-
-        // Use launchPersistentContext to properly handle user data directory
-        try {
-          context = await pw.chromium.launchPersistentContext(profileDir, launchOptions);
-          browser = context;
-        } catch (launchError) {
-          // If launch failed and no system Chrome was found, provide helpful error
-          if (!chromeExecutable && launchError.message.includes('Executable doesn\'t exist')) {
-            debugLog('Playwright Chromium not installed and no system Chrome found');
-            throw new Error(
-              '❌ No Chrome/Chromium browser found!\n\n' +
-              'This MCP server needs a Chrome or Chromium browser to work.\n\n' +
-              'Option 1 - Install Chrome/Chromium on your system:\n' +
-              '  • Ubuntu/Debian: sudo apt install google-chrome-stable\n' +
-              '  • Ubuntu/Debian: sudo apt install chromium-browser\n' +
-              '  • Fedora: sudo dnf install google-chrome-stable\n' +
-              '  • macOS: brew install --cask google-chrome\n' +
-              '  • Or download from: https://www.google.com/chrome/\n\n' +
-              'Option 2 - Install Playwright\'s Chromium:\n' +
-              '  npm install playwright\n' +
-              '  npx playwright install chromium\n\n' +
-              'Option 3 - Use with Antigravity:\n' +
-              '  Open Antigravity and click the Chrome logo (top right) to start the browser.\n' +
-              '  This MCP server will automatically connect to it.\n'
-            );
-          }
-          throw launchError;
-        }
-        debugLog('✅ Successfully launched new Chrome instance (Standalone mode)');
-      }
-
-    } catch (error) {
-      debugLog(`Failed to connect/launch Chrome: ${error.message}`);
-      // Re-throw formatted error
-      throw error;
-    }
-  }
-
-  // Ensure we have a context and a page
-  if (!context) {
-    const contexts = browser.contexts();
-    context = contexts.length > 0 ? contexts[0] : await browser.newContext();
-  }
-
-  const pages = context.pages();
-  if (pages.length === 0) {
-    page = await context.newPage();
-    activePageIndex = 0;
-  } else {
-    // Ensure activePageIndex is within bounds
-    if (activePageIndex >= pages.length) activePageIndex = pages.length - 1;
-    page = pages[activePageIndex];
-  }
-
-  return { browser, context, page };
-}
 
 // MCP Tool definitions
 const tools = [
@@ -780,7 +651,8 @@ async function executeTool(name, args) {
         const url = await page.url();
 
         // Detect mode: connected to existing Chrome or launched our own
-        const isConnected = browser.isConnected && browser.isConnected();
+        const { browser } = getBrowserState();
+        const isConnected = browser && browser.isConnected && browser.isConnected();
         const mode = isConnected ? 'Connected to existing Chrome (Antigravity)' : 'Launched standalone Chrome';
 
         // Determine profile path based on mode
@@ -790,6 +662,7 @@ async function executeTool(name, args) {
         } else {
           browserProfile = process.env.MCP_BROWSER_PROFILE || `${os.tmpdir()}/chrome-mcp-profile`;
         }
+
 
         return {
           content: [{

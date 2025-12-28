@@ -12,15 +12,25 @@
 
     <h2>Audio Element</h2>
     <audio id="test-audio" controls loop>
-        <source src="data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
+        <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
             type="audio/wav">
         Your browser does not support the audio element.
     </audio>
 
     <h2>Video Element</h2>
     <video id="test-video" width="320" height="240" controls loop muted>
+        <source src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+            type="video/mp4">
         Your browser does not support the video element.
     </video>
+
+    <script>
+        // Fallback: create Web Audio oscillator if audio tag fails to load data URI
+        const audio = document.getElementById('test-audio');
+        if (audio.error) {
+            console.error('Audio tag error:', audio.error);
+        }
+    </script>
 </body>
 
 </html>
