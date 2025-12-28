@@ -255,7 +255,7 @@ gemini mcp add --trust browser node /path/to/src/index.js
 
 ## Available Tools (37)
 
-### Documentation ⭐ NEW
+### Documentation
 1. **browser_docs(toolName?)** - Get detailed docs, return schemas, examples, and caveats for any tool
 
 ### Multi-Page Management
@@ -646,7 +646,7 @@ Check `/tmp/mcp-browser-server.log` for detailed logs:
 ## Comparison with Other Tools
 
 ### vs. Puppeteer MCP Servers
-- ✅ More tools (16 vs typical 8-10)
+- ✅ More tools (37 vs typical 8-10)
 - ✅ Console capture built-in
 - ✅ Better error messages
 - ✅ Hybrid mode (connect OR launch)
