@@ -3,7 +3,7 @@ const { connectToBrowser } = require('../browser');
 const definitions = [
     {
         name: 'browser_navigate',
-        description: 'Navigate to a URL in the browser',
+        description: 'Navigate to a URL in the browser (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -16,7 +16,7 @@ const definitions = [
     },
     {
         name: 'browser_reload',
-        description: 'Reload the current page',
+        description: 'Reload the current page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -26,7 +26,7 @@ const definitions = [
     },
     {
         name: 'browser_go_back',
-        description: 'Navigate back in history',
+        description: 'Navigate back in history (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -36,7 +36,7 @@ const definitions = [
     },
     {
         name: 'browser_go_forward',
-        description: 'Navigate forward in history',
+        description: 'Navigate forward in history (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},

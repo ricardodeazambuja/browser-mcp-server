@@ -5,7 +5,7 @@ const { getPlaywrightPath } = require('../utils');
 const definitions = [
     {
         name: 'browser_health_check',
-        description: 'Check if the browser is running and accessible on port 9222',
+        description: 'Check if the browser is running and accessible on port 9222 (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -15,7 +15,7 @@ const definitions = [
     },
     {
         name: 'browser_wait',
-        description: 'Pause execution for a duration',
+        description: 'Pause execution for a duration (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -28,7 +28,7 @@ const definitions = [
     },
     {
         name: 'browser_resize_window',
-        description: 'Resize the browser window (useful for testing responsiveness)',
+        description: 'Resize the browser window (useful for testing responsiveness) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -42,7 +42,7 @@ const definitions = [
     },
     {
         name: 'browser_wait_for_selector',
-        description: 'Wait for an element to appear on the page',
+        description: 'Wait for an element to appear on the page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -56,7 +56,7 @@ const definitions = [
     },
     {
         name: 'browser_start_video_recording',
-        description: 'Start recording browser session as video',
+        description: 'Start recording browser session as video (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -68,7 +68,7 @@ const definitions = [
     },
     {
         name: 'browser_stop_video_recording',
-        description: 'Stop video recording and save the file',
+        description: 'Stop video recording and save the file (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -113,7 +113,7 @@ const handlers = {
                     `✅ Chrome: Port 9222\n` +
                     `✅ Profile: ${browserProfile}\n` +
                     `✅ Current page: ${url}\n\n` +
-                    `All 36 browser tools are ready to use!`
+                    `All 37 browser tools are ready to use!`
             }]
         };
     },

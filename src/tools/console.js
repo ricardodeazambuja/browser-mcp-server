@@ -8,7 +8,7 @@ let consoleListening = false;
 const definitions = [
     {
         name: 'browser_console_start',
-        description: 'Start capturing browser console logs (console.log, console.error, console.warn, etc.)',
+        description: 'Start capturing browser console logs (console.log, console.error, console.warn, etc.) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -24,7 +24,7 @@ const definitions = [
     },
     {
         name: 'browser_console_get',
-        description: 'Get all captured console logs since browser_console_start was called',
+        description: 'Get all captured console logs since browser_console_start was called (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -40,7 +40,7 @@ const definitions = [
     },
     {
         name: 'browser_console_clear',
-        description: 'Clear all captured console logs and stop listening',
+        description: 'Clear all captured console logs and stop listening (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},

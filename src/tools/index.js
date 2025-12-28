@@ -14,7 +14,8 @@ const coreModules = [
     'media',
     'console',
     'info',
-    'system'
+    'system',
+    'docs'
 ];
 
 // Load core tools

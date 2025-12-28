@@ -3,7 +3,7 @@ const { connectToBrowser } = require('../browser');
 const definitions = [
     {
         name: 'browser_mouse_move',
-        description: 'Move the mouse to specific coordinates',
+        description: 'Move the mouse to specific coordinates (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -17,7 +17,7 @@ const definitions = [
     },
     {
         name: 'browser_mouse_click',
-        description: 'Click the mouse at specific coordinates or on current position',
+        description: 'Click the mouse at specific coordinates or on current position (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -32,7 +32,7 @@ const definitions = [
     },
     {
         name: 'browser_mouse_drag',
-        description: 'Drag from one position to another',
+        description: 'Drag from one position to another (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -48,7 +48,7 @@ const definitions = [
     },
     {
         name: 'browser_mouse_wheel',
-        description: 'Scroll the mouse wheel',
+        description: 'Scroll the mouse wheel (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {

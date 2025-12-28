@@ -3,7 +3,7 @@ const { connectToBrowser } = require('../browser');
 const definitions = [
     {
         name: 'browser_get_media_summary',
-        description: 'Get a summary of all audio and video elements on the page',
+        description: 'Get a summary of all audio and video elements on the page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -13,7 +13,7 @@ const definitions = [
     },
     {
         name: 'browser_get_audio_analysis',
-        description: 'Analyze audio output for a duration to detect sound vs silence and frequencies',
+        description: 'Analyze audio output for a duration to detect sound vs silence and frequencies (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -26,7 +26,7 @@ const definitions = [
     },
     {
         name: 'browser_control_media',
-        description: 'Control a media element (play, pause, seek, mute)',
+        description: 'Control a media element (play, pause, seek, mute) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {

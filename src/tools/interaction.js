@@ -3,7 +3,7 @@ const { connectToBrowser } = require('../browser');
 const definitions = [
     {
         name: 'browser_click',
-        description: 'Click an element on the page using Playwright selector',
+        description: 'Click an element on the page using Playwright selector (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -16,7 +16,7 @@ const definitions = [
     },
     {
         name: 'browser_type',
-        description: 'Type text into an input field',
+        description: 'Type text into an input field (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -30,7 +30,7 @@ const definitions = [
     },
     {
         name: 'browser_hover',
-        description: 'Hover over an element',
+        description: 'Hover over an element (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -43,7 +43,7 @@ const definitions = [
     },
     {
         name: 'browser_focus',
-        description: 'Focus an element',
+        description: 'Focus an element (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -56,7 +56,7 @@ const definitions = [
     },
     {
         name: 'browser_select',
-        description: 'Select options in a dropdown',
+        description: 'Select options in a dropdown (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -70,7 +70,7 @@ const definitions = [
     },
     {
         name: 'browser_scroll',
-        description: 'Scroll the page',
+        description: 'Scroll the page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {

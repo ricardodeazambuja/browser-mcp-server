@@ -102,7 +102,7 @@ async function runTests() {
             console.log(`\n✅ All tests passed! (${testsCompleted}/${totalTests})`);
             console.log('\n📊 Test Summary:');
             console.log('   ✅ MCP Protocol initialization');
-            console.log('   ✅ Tools listing (36 tools)');
+            console.log('   ✅ Tools listing (37 tools)');
 
 
             console.log('   ✅ Browser automation (health check)');

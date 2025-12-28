@@ -2,14 +2,15 @@
 
 A universal browser automation MCP server using Playwright. Control Chrome programmatically through the Model Context Protocol.
 
-**36 powerful browser automation tools** including multi-tab management, media monitoring/control, low-level interaction, and session recording.
+**37 powerful browser automation tools** including multi-tab management, media monitoring/control, low-level interaction, session recording, and on-demand documentation.
 
 ## Features
 
 - ✅ **Smart Chrome Detection**: Automatically finds and uses system Chrome/Chromium
 - ✅ **Three-Tier Strategy**: Antigravity Chrome → System Chrome → Playwright Chromium
 - ✅ **Universal**: Works with Antigravity, Claude Desktop, and any MCP client
-- ✅ **36 Tools**: Media control, multi-tab, pixel-based interaction, and more
+- ✅ **37 Tools**: Media control, multi-tab, pixel-based interaction, and more
+- ✅ **On-Demand Docs**: Built-in documentation tool with return schemas and examples
 - ✅ **Auto-Install**: Playwright installed automatically via npm (no manual setup)
 - ✅ **Safe**: Isolated browser profile (won't touch your personal Chrome)
 - ✅ **Console Capture**: Debug JavaScript errors in real-time
@@ -252,57 +253,115 @@ gemini mcp add --timeout 30000 browser node /path/to/src/index.js
 gemini mcp add --trust browser node /path/to/src/index.js
 ```
 
-## Available Tools (36)
+## Available Tools (37)
 
-### Multi-Page Management ⭐ NEW
-1. **browser_list_pages()** - List all open tabs/pages
-2. **browser_new_page(url?)** - Open a new tab
-3. **browser_switch_page(index)** - Switch active tab
-4. **browser_close_page(index?)** - Close a tab
+### Documentation ⭐ NEW
+1. **browser_docs(toolName?)** - Get detailed docs, return schemas, examples, and caveats for any tool
 
-### Media Awareness & Control ⭐ NEW
-5. **browser_get_media_summary()** - List all audio/video elements with state
-6. **browser_get_audio_analysis(durationMs?, selector?)** - Analyze audio output (volume, spectrum)
-7. **browser_control_media(selector, action, value?)** - Play, pause, mute, seek
+### Multi-Page Management
+2. **browser_list_pages()** - List all open tabs/pages
+3. **browser_new_page(url?)** - Open a new tab
+4. **browser_switch_page(index)** - Switch active tab
+5. **browser_close_page(index?)** - Close a tab
+
+### Media Awareness & Control
+6. **browser_get_media_summary()** - List all audio/video elements with state
+7. **browser_get_audio_analysis(durationMs?, selector?)** - Analyze audio output (volume, spectrum)
+8. **browser_control_media(selector, action, value?)** - Play, pause, mute, seek
 
 ### Navigation & Interaction
-8. **browser_navigate(url)** - Navigate to a URL
-9. **browser_click(selector)** - Click an element (selector-based)
-10. **browser_type(selector, text)** - Type text into an input
-11. **browser_scroll(x?, y?)** - Scroll the page (generic)
-12. **browser_reload()** - Reload current page
-13. **browser_go_back()** - Navigate back
-14. **browser_go_forward()** - Navigate forward
-15. **browser_wait(ms)** - Pause execution
+9. **browser_navigate(url)** - Navigate to a URL
+10. **browser_click(selector)** - Click an element (selector-based)
+11. **browser_type(selector, text)** - Type text into an input
+12. **browser_scroll(x?, y?)** - Scroll the page (generic)
+13. **browser_reload()** - Reload current page
+14. **browser_go_back()** - Navigate back
+15. **browser_go_forward()** - Navigate forward
+16. **browser_wait(ms)** - Pause execution
 
 ### Low-Level Interaction
-16. **browser_mouse_move(x, y)** - Move mouse to pixel coordinates
-17. **browser_mouse_click(x?, y?, button?, count?)** - Click at pixel coordinates
-18. **browser_mouse_drag(fromX, fromY, toX, toY)** - Drag and drop
-19. **browser_mouse_wheel(deltaX, deltaY)** - Scroll mouse wheel
-20. **browser_press_key(key)** - Send keyboard event (e.g. "Enter")
+17. **browser_mouse_move(x, y)** - Move mouse to pixel coordinates
+18. **browser_mouse_click(x?, y?, button?, count?)** - Click at pixel coordinates
+19. **browser_mouse_drag(fromX, fromY, toX, toY)** - Drag and drop
+20. **browser_mouse_wheel(deltaX, deltaY)** - Scroll mouse wheel
+21. **browser_press_key(key)** - Send keyboard event (e.g. "Enter")
 
 ### Information Gathering
-21. **browser_screenshot(fullPage?)** - Capture screenshot
-22. **browser_get_text(selector)** - Get text from element
-23. **browser_get_dom(selector?)** - Get DOM structure
-24. **browser_read_page()** - Get page metadata (title, URL)
-25. **browser_evaluate(code)** - Execute JavaScript
+22. **browser_screenshot(fullPage?)** - Capture screenshot
+23. **browser_get_text(selector)** - Get text from element
+24. **browser_get_dom(selector?)** - Get DOM structure
+25. **browser_read_page()** - Get page metadata (title, URL)
+26. **browser_evaluate(code)** - Execute JavaScript
 
 ### Console Debugging
-26. **browser_console_start(level?)** - Start capturing logs
-27. **browser_console_get(filter?)** - Get captured logs
-28. **browser_console_clear()** - Clear logs and stop
+27. **browser_console_start(level?)** - Start capturing logs
+28. **browser_console_get(filter?)** - Get captured logs
+29. **browser_console_clear()** - Clear logs and stop
 
 ### Advanced Interaction
-29. **browser_hover(selector)** - Hover over element
-30. **browser_focus(selector)** - Focus element
-31. **browser_select(selector, values)** - Select dropdown options
-32. **browser_wait_for_selector(selector, timeout?)** - Wait for element
-33. **browser_resize_window(width, height)** - Resize window
-34. **browser_start_video_recording(path?)** - Start session recording
-35. **browser_stop_video_recording()** - Stop and save recording
-36. **browser_health_check()** - Verify browser connection
+30. **browser_hover(selector)** - Hover over element
+31. **browser_focus(selector)** - Focus element
+32. **browser_select(selector, values)** - Select dropdown options
+33. **browser_wait_for_selector(selector, timeout?)** - Wait for element
+34. **browser_resize_window(width, height)** - Resize window
+35. **browser_start_video_recording(path?)** - Start session recording
+36. **browser_stop_video_recording()** - Stop and save recording
+37. **browser_health_check()** - Verify browser connection
+
+## On-Demand Documentation
+
+The `browser_docs` tool provides comprehensive documentation for all browser tools **without increasing token overhead** in normal operations.
+
+### Why This Matters
+
+- **Token Efficient**: Tool descriptions stay concise (saving tokens on every request)
+- **Comprehensive**: Detailed docs available when needed (return schemas, examples, caveats)
+- **Self-Documenting**: AI agents can discover tool capabilities on-demand
+
+### What You Get
+
+When calling `browser_docs(toolName)`, you receive:
+- **Parameter Details**: Types, optionality, defaults, enums
+- **Return Value Schemas**: Exact structure of what the tool returns
+- **Selector Syntax**: How to write Playwright selectors (CSS, text, data attributes)
+- **Important Caveats**: Warnings about CORS, clearing behavior, state management
+- **Practical Examples**: Real-world usage patterns
+
+### Usage
+
+```javascript
+// Get docs for a specific tool
+browser_docs({ toolName: 'browser_get_audio_analysis' })
+
+// List all available tools
+browser_docs({})
+
+// Invalid tool name suggests similar tools
+browser_docs({ toolName: 'navigate' })
+// → Did you mean: browser_navigate, browser_go_back, ...
+```
+
+### Example Output
+
+```
+📖 browser_type(selector, text)
+
+Type text into an input field.
+
+Parameters:
+  • selector (string, required) - Playwright selector for the input
+  • text (string, required) - Text to type
+
+Returns:
+  { content: [{ type: 'text', text: 'Typed into <selector>' }] }
+
+⚠️ Important:
+  • Uses page.fill() which CLEARS the field first, then types
+  • Does NOT append to existing text
+
+Example:
+  browser_type({ selector: '#username', text: 'john@example.com' })
+```
 
 ## Examples
 
@@ -347,6 +406,24 @@ browser_switch_page(0) // Back to Wikipedia
 browser_mouse_move(500, 300)
 browser_mouse_click(button: "right")
 browser_press_key("Enter")
+```
+
+### Get Tool Documentation
+```javascript
+// Agent uses:
+browser_docs(toolName: "browser_get_audio_analysis")
+// Returns:
+// 📖 browser_get_audio_analysis(durationMs?, selector?)
+//
+// Parameters:
+//   • durationMs (number, optional) - Duration to analyze in ms (default: 2000)
+//   • selector (string, optional) - Selector for specific media element
+//
+// Returns: { isSilent: boolean, averageVolume: number, ... }
+// ⚠️ Important: Requires CORS headers for cross-origin media
+
+// List all tools:
+browser_docs()  // Shows all 37 tools
 ```
 
 ## How It Works
@@ -613,10 +690,12 @@ MIT License - see LICENSE file
 ## Changelog
 
 ### v1.3.0 (2025-12-27) ⭐ NEW
+- ✅ **On-Demand Documentation**: New `browser_docs` tool provides detailed specs, return schemas, examples, and caveats for all 37 tools
 - ✅ **Modular Architecture**: Complete refactor into `src/` modules for better maintainability
 - ✅ **Plugin System**: New `plugins/` directory for extending functionality
 - ✅ **Improved Testing**: Dedicated `tests/` directory with fixtures
 - ✅ **Core Stability**: Separated browser logic, tools, and protocol handling
+- ✅ **Token Efficient**: Documentation loaded on-demand, keeping tool descriptions concise
 
 ### v1.2.0 (2025-12-27)
 - ✅ **Media Awareness**: Added audio/video inspection, spectral analysis, and control tools (36 tools total)

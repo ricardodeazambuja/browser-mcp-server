@@ -3,7 +3,7 @@ const { connectToBrowser, setActivePageIndex, getBrowserState } = require('../br
 const definitions = [
     {
         name: 'browser_list_pages',
-        description: 'List all open browser pages (tabs)',
+        description: 'List all open browser pages (tabs) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -13,7 +13,7 @@ const definitions = [
     },
     {
         name: 'browser_new_page',
-        description: 'Open a new browser page (tab)',
+        description: 'Open a new browser page (tab) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -25,7 +25,7 @@ const definitions = [
     },
     {
         name: 'browser_switch_page',
-        description: 'Switch to a different browser page (tab)',
+        description: 'Switch to a different browser page (tab) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -38,7 +38,7 @@ const definitions = [
     },
     {
         name: 'browser_close_page',
-        description: 'Close a browser page (tab)',
+        description: 'Close a browser page (tab) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {

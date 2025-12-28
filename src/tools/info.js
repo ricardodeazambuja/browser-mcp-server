@@ -3,7 +3,7 @@ const { connectToBrowser } = require('../browser');
 const definitions = [
     {
         name: 'browser_screenshot',
-        description: 'Take a screenshot of the current page',
+        description: 'Take a screenshot of the current page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -15,7 +15,7 @@ const definitions = [
     },
     {
         name: 'browser_get_text',
-        description: 'Get text content from an element',
+        description: 'Get text content from an element (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -28,7 +28,7 @@ const definitions = [
     },
     {
         name: 'browser_evaluate',
-        description: 'Execute JavaScript in the browser context',
+        description: 'Execute JavaScript in the browser context (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -41,7 +41,7 @@ const definitions = [
     },
     {
         name: 'browser_get_dom',
-        description: 'Get the full DOM structure or specific element data',
+        description: 'Get the full DOM structure or specific element data (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -53,7 +53,7 @@ const definitions = [
     },
     {
         name: 'browser_read_page',
-        description: 'Read the content and metadata of the current page',
+        description: 'Read the content and metadata of the current page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},

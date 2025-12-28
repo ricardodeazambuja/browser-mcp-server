@@ -3,7 +3,7 @@ const { connectToBrowser } = require('../browser');
 const definitions = [
     {
         name: 'browser_press_key',
-        description: 'Send a keyboard event (press a key)',
+        description: 'Send a keyboard event (press a key) (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
