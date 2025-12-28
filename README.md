@@ -73,8 +73,8 @@ npx playwright install chromium
 
 ```bash
 # Download the main file directly (no git required)
-curl -o browser-mcp-server-playwright.js \
-  https://raw.githubusercontent.com/ricardodeazambuja/browser-mcp-server/main/browser-mcp-server-playwright.js
+curl -o src/index.js \
+  https://raw.githubusercontent.com/ricardodeazambuja/browser-mcp-server/main/src/index.js
 
 # Install Playwright
 npm install playwright
@@ -93,7 +93,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "browser-tools": {
       "command": "node",
-      "args": ["/absolute/path/to/browser-mcp-server-playwright.js"]
+      "args": ["/absolute/path/to/src/index.js"]
     }
   }
 }
@@ -123,7 +123,7 @@ Add to `~/.gemini/antigravity/mcp_config.json`:
   "mcpServers": {
     "browser-tools": {
       "command": "node",
-      "args": ["/home/username/.gemini/antigravity/browser-mcp-server-playwright.js"]
+      "args": ["/home/username/.gemini/antigravity/src/index.js"]
     }
   }
 }
@@ -151,12 +151,12 @@ Add the browser-mcp-server using the Claude CLI:
 ```bash
 # Install the MCP server with default isolated profile
 claude mcp add --transport stdio browser \
-  -- node /absolute/path/to/browser-mcp-server-playwright.js
+  -- node /absolute/path/to/src/index.js
 
 # Or with custom browser profile for more control
 claude mcp add --transport stdio browser \
   --env MCP_BROWSER_PROFILE=/path/to/custom/profile \
-  -- node /absolute/path/to/browser-mcp-server-playwright.js
+  -- node /absolute/path/to/src/index.js
 ```
 
 **Using NPM:**
@@ -202,11 +202,11 @@ Add the browser-mcp-server using the Gemini CLI commands:
 **Using local installation:**
 ```bash
 # Install the MCP server with default isolated profile
-gemini mcp add browser node /absolute/path/to/browser-mcp-server-playwright.js
+gemini mcp add browser node /absolute/path/to/src/index.js
 
 # Or with custom browser profile
 gemini mcp add -e MCP_BROWSER_PROFILE=/path/to/custom/profile browser \
-  node /absolute/path/to/browser-mcp-server-playwright.js
+  node /absolute/path/to/src/index.js
 ```
 
 **Using NPM:**
@@ -243,13 +243,13 @@ gemini mcp remove browser
 
 ```bash
 # Add with specific scope (user vs project)
-gemini mcp add -s user browser node /path/to/browser-mcp-server-playwright.js
+gemini mcp add -s user browser node /path/to/src/index.js
 
 # Add with timeout configuration
-gemini mcp add --timeout 30000 browser node /path/to/browser-mcp-server-playwright.js
+gemini mcp add --timeout 30000 browser node /path/to/src/index.js
 
 # Skip tool confirmation prompts (use with caution)
-gemini mcp add --trust browser node /path/to/browser-mcp-server-playwright.js
+gemini mcp add --trust browser node /path/to/src/index.js
 ```
 
 ## Available Tools (36)
@@ -423,7 +423,7 @@ This MCP server provides powerful browser automation capabilities. Please review
 export MCP_BROWSER_PROFILE="$HOME/.mcp-browser-profile"
 
 # Then run the server
-node browser-mcp-server-playwright.js
+node src/index.js
 ```
 
 ### MCP Config with Environment Variables
@@ -433,7 +433,7 @@ node browser-mcp-server-playwright.js
   "mcpServers": {
     "browser-tools": {
       "command": "node",
-      "args": ["/path/to/browser-mcp-server-playwright.js"],
+      "args": ["/path/to/src/index.js"],
       "env": {
         "MCP_BROWSER_PROFILE": "/tmp/my-custom-profile"
       }
@@ -494,7 +494,14 @@ Use the `browser_health_check` tool to verify:
 
 ```
 browser-mcp-server/
-├── browser-mcp-server-playwright.js  # Main server
+├── src/index.js                      # Main server entry point
+├── src/                              # Source code
+│   ├── index.js                      # Main server class
+│   ├── browser.js                    # Browser management
+│   ├── tools/                        # Tool modules
+│   └── utils.js                      # Utilities
+├── tests/                            # Test suite
+├── plugins/                          # Plugin directory
 ├── package.json                      # npm package config
 ├── README.md                         # This file
 └── LICENSE                           # MIT license
@@ -507,7 +514,7 @@ browser-mcp-server/
 npm test
 
 # Manual test
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | node browser-mcp-server-playwright.js
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0.0"}}}' | node src/index.js
 ```
 
 ### Debug Logging
@@ -605,7 +612,13 @@ MIT License - see LICENSE file
 
 ## Changelog
 
-### v1.2.0 (2025-12-27) ⭐ NEW
+### v1.3.0 (2025-12-27) ⭐ NEW
+- ✅ **Modular Architecture**: Complete refactor into `src/` modules for better maintainability
+- ✅ **Plugin System**: New `plugins/` directory for extending functionality
+- ✅ **Improved Testing**: Dedicated `tests/` directory with fixtures
+- ✅ **Core Stability**: Separated browser logic, tools, and protocol handling
+
+### v1.2.0 (2025-12-27)
 - ✅ **Media Awareness**: Added audio/video inspection, spectral analysis, and control tools (36 tools total)
 - ✅ **Tool**: `browser_get_media_summary`, `browser_get_audio_analysis`, `browser_control_media`
 

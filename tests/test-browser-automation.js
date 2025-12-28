@@ -8,6 +8,7 @@
 const { spawn } = require('child_process');
 const readline = require('readline');
 const fs = require('fs');
+const path = require('path');
 
 let requestId = 0;
 let proc;
@@ -30,7 +31,8 @@ async function runTests() {
   console.log('🌐 Browser Automation Test Suite\n');
   console.log('='.repeat(60));
 
-  proc = spawn('node', ['browser-mcp-server-playwright.js'], {
+  const serverPath = path.join(__dirname, '..', 'src', 'index.js');
+  proc = spawn('node', [serverPath], {
     stdio: ['pipe', 'pipe', 'pipe']
   });
 

@@ -9,7 +9,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const readline = require('readline');
 
-const serverPath = path.join(__dirname, 'browser-mcp-server-playwright.js');
+const serverPath = path.join(__dirname, '..', 'src', 'index.js');
 const proc = spawn('node', [serverPath], { stdio: ['pipe', 'pipe', 'pipe'] });
 
 proc.stderr.on('data', (data) => {
@@ -91,7 +91,7 @@ const steps = [
         method: 'tools/call',
         params: () => ({
             name: 'browser_navigate',
-            arguments: { url: 'file://' + path.join(__dirname, 'test-media.html') }
+            arguments: { url: 'file://' + path.join(__dirname, 'fixtures', 'test-media.html') }
         }),
         verify: () => { }
     },

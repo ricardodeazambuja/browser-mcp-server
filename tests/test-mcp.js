@@ -6,6 +6,7 @@
 
 const { spawn } = require('child_process');
 const readline = require('readline');
+const path = require('path');
 
 let requestId = 0;
 
@@ -38,7 +39,8 @@ async function runTests() {
   console.log('🧪 Starting MCP Server Tests\n');
   console.log('='.repeat(50));
 
-  const proc = spawn('node', ['browser-mcp-server-playwright.js'], {
+  const serverPath = path.join(__dirname, '..', 'src', 'index.js');
+  const proc = spawn('node', [serverPath], {
     stdio: ['pipe', 'pipe', 'pipe']
   });
 
