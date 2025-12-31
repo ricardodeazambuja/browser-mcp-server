@@ -757,6 +757,804 @@ Information Returned:
 
 Example:
   browser_health_check({})
+`,
+
+    // ========================================
+    // Performance Profiling Tools (CDP)
+    // ========================================
+
+    browser_perf_start_profile: `
+📖 browser_perf_start_profile(sampleInterval?)
+
+Start CPU profiling to track JavaScript execution performance.
+
+Parameters:
+  • sampleInterval (number, optional) - Microseconds between samples (default: 100)
+
+Returns:
+  { content: [{ type: 'text', text: 'CPU profiling started...' }] }
+
+Behavior:
+  • Uses Chrome DevTools Protocol Profiler domain
+  • Captures JavaScript call stacks at regular intervals
+  • Must call browser_perf_stop_profile to get results
+  • Profiling remains active across page navigations
+
+⚠️ Important:
+  • Profiling adds performance overhead
+  • Profile data can be very large (10,000+ nodes for complex apps)
+  • Use for debugging/optimization, not production monitoring
+  • Only one profile session can be active at a time
+
+Example:
+  browser_perf_start_profile({})
+  browser_perf_start_profile({ sampleInterval: 50 })  // More granular sampling
+`,
+
+    browser_perf_stop_profile: `
+📖 browser_perf_stop_profile()
+
+Stop CPU profiling and get profile data with summary statistics.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'CPU Profile Results: {...summary...}' }] }
+
+Return Structure:
+  {
+    totalNodes: number,
+    totalSamples: number,
+    durationMicroseconds: number,
+    durationMs: string,
+    topFunctions: [
+      { function: string, url: string, line: number }
+    ]
+  }
+
+⚠️ Important:
+  • Must call browser_perf_start_profile first
+  • Returns summarized data - full profile too large to display
+  • Top 15 functions shown by default
+  • Use Chrome DevTools for detailed profile analysis
+
+Example:
+  browser_perf_stop_profile({})
+`,
+
+    browser_perf_take_heap_snapshot: `
+📖 browser_perf_take_heap_snapshot(reportProgress?)
+
+Capture a heap snapshot for memory analysis and leak detection.
+
+Parameters:
+  • reportProgress (boolean, optional) - Report progress events (default: false)
+
+Returns:
+  { content: [{ type: 'text', text: 'Heap Snapshot Captured: X KB...' }] }
+
+Return Structure:
+  {
+    size: string,  // In KB
+    chunks: number
+  }
+
+⚠️ Important:
+  • Snapshot can be very large (10+ MB for complex apps)
+  • May freeze browser briefly during capture
+  • Full snapshot data not returned (use Chrome DevTools to analyze)
+  • Useful for detecting memory leaks
+
+Example:
+  browser_perf_take_heap_snapshot({})
+  browser_perf_take_heap_snapshot({ reportProgress: true })
+`,
+
+    browser_perf_get_heap_usage: `
+📖 browser_perf_get_heap_usage()
+
+Get current JavaScript heap usage statistics.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'JavaScript Heap Usage: {...}' }] }
+
+Return Structure:
+  {
+    usedSize: number,     // Bytes
+    usedSizeMB: string,
+    totalSize: number,    // Bytes
+    totalSizeMB: string,
+    limit: number,        // Max heap size
+    limitMB: string,
+    usagePercent: string
+  }
+
+Use Case:
+  • Monitor memory usage in real-time
+  • Detect potential memory leaks
+  • Track memory growth over time
+
+Example:
+  browser_perf_get_heap_usage({})
+`,
+
+    browser_perf_get_metrics: `
+📖 browser_perf_get_metrics()
+
+Get runtime performance metrics (DOM nodes, event listeners, JS heap).
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Runtime Performance Metrics: [...]' }] }
+
+Return Structure:
+  [
+    { name: 'Timestamp', value: number },
+    { name: 'Documents', value: number },
+    { name: 'Frames', value: number },
+    { name: 'JSEventListeners', value: number },
+    { name: 'Nodes', value: number },
+    { name: 'LayoutCount', value: number },
+    { name: 'RecalcStyleCount', value: number },
+    { name: 'JSHeapUsedSize', value: number },
+    { name: 'JSHeapTotalSize', value: number }
+  ]
+
+Use Case:
+  • Track DOM complexity
+  • Monitor event listener count
+  • Measure layout/style recalculations
+
+Example:
+  browser_perf_get_metrics({})
+`,
+
+    browser_perf_get_performance_metrics: `
+📖 browser_perf_get_performance_metrics()
+
+Get web vitals and navigation timing (FCP, LCP, CLS, TTFB).
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Web Performance Metrics: {...}' }] }
+
+Return Structure:
+  {
+    navigation: {
+      domContentLoaded: number,  // ms
+      loadComplete: number,
+      domInteractive: number,
+      ttfb: number  // Time to First Byte
+    },
+    paint: {
+      'first-paint': number,
+      'first-contentful-paint': number
+    },
+    webVitals: {
+      lcp: number,  // Largest Contentful Paint
+      cls: number   // Cumulative Layout Shift
+    }
+  }
+
+⚠️ Note:
+  • Some metrics may not be available depending on page state
+  • Web vitals require user interaction for accuracy
+  • Metrics based on Performance API
+
+Example:
+  browser_perf_get_performance_metrics({})
+`,
+
+    browser_perf_start_coverage: `
+📖 browser_perf_start_coverage(resetOnNavigation?)
+
+Start tracking CSS and JavaScript code coverage.
+
+Parameters:
+  • resetOnNavigation (boolean, optional) - Reset coverage on navigation (default: true)
+
+Returns:
+  { content: [{ type: 'text', text: 'Code coverage started...' }] }
+
+Behavior:
+  • Tracks which CSS rules and JS code are executed
+  • Helps identify unused code for optimization
+  • Must call browser_perf_stop_coverage to get results
+
+Use Case:
+  • Find unused CSS/JS for code splitting
+  • Optimize bundle size
+  • Identify dead code
+
+Example:
+  browser_perf_start_coverage({})
+  browser_perf_start_coverage({ resetOnNavigation: false })
+`,
+
+    browser_perf_stop_coverage: `
+📖 browser_perf_stop_coverage()
+
+Stop coverage tracking and get results showing used vs unused code.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Code Coverage Results: {...}' }] }
+
+Return Structure:
+  {
+    javascript: {
+      filesAnalyzed: number,
+      topFiles: [
+        { url: string, usedBytes: number, totalBytes: number, coverage: string }
+      ]
+    },
+    css: {
+      rulesAnalyzed: number,
+      topRules: [
+        { used: boolean, styleSheetId: string, ... }
+      ]
+    }
+  }
+
+⚠️ Important:
+  • Must call browser_perf_start_coverage first
+  • Shows top 10 files by default
+  • Full coverage data available via CDP
+
+Example:
+  browser_perf_stop_coverage({})
+`,
+
+    // ========================================
+    // Network Analysis Tools (CDP)
+    // ========================================
+
+    browser_net_start_monitoring: `
+📖 browser_net_start_monitoring(patterns?)
+
+Start monitoring network requests with detailed timing.
+
+Parameters:
+  • patterns (array, optional) - URL patterns to monitor (default: all)
+
+Returns:
+  { content: [{ type: 'text', text: 'Network monitoring started...' }] }
+
+Behavior:
+  • Captures all network requests and responses
+  • Records detailed timing information
+  • Tracks WebSocket frames
+  • Limited to 500 requests to prevent memory issues
+
+Use Case:
+  • Debug API calls
+  • Analyze network performance
+  • Inspect request/response details
+
+Example:
+  browser_net_start_monitoring({})
+  browser_net_start_monitoring({ patterns: ['https://api.example.com/*'] })
+`,
+
+    browser_net_get_requests: `
+📖 browser_net_get_requests(filter?)
+
+Get captured network requests with timing breakdown.
+
+Parameters:
+  • filter (string, optional) - Filter by URL substring
+
+Returns:
+  { content: [{ type: 'text', text: 'Network Requests: {...}' }] }
+
+Return Structure:
+  {
+    totalCaptured: number,
+    filtered: number,
+    requests: [
+      {
+        method: string,
+        url: string,
+        status: number,
+        type: string,
+        size: string,
+        timing: string,
+        failed: boolean,
+        fromCache: boolean
+      }
+    ]
+  }
+
+⚠️ Important:
+  • Must call browser_net_start_monitoring first
+  • Limited to 50 requests in output for readability
+  • Use filter parameter to narrow results
+
+Example:
+  browser_net_get_requests({})
+  browser_net_get_requests({ filter: 'api' })
+`,
+
+    browser_net_stop_monitoring: `
+📖 browser_net_stop_monitoring()
+
+Stop network monitoring and clear request log.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Network monitoring stopped. Captured X requests...' }] }
+
+Behavior:
+  • Disables network tracking
+  • Clears all captured requests
+  • Removes event listeners
+
+Example:
+  browser_net_stop_monitoring({})
+`,
+
+    browser_net_export_har: `
+📖 browser_net_export_har(includeContent?)
+
+Export full network activity log in HAR (HTTP Archive) format.
+
+Parameters:
+  • includeContent (boolean, optional) - Include response bodies (default: false)
+
+Returns:
+  { content: [{ type: 'text', text: 'HAR Export: {...}' }] }
+
+Return Structure:
+  {
+    log: {
+      version: '1.2',
+      creator: { name: string, version: string },
+      entries: [
+        {
+          startedDateTime: string,
+          time: number,
+          request: { method: string, url: string, headers: [...] },
+          response: { status: number, headers: [...], content: {...} },
+          timings: { send: number, wait: number, receive: number }
+        }
+      ]
+    }
+  }
+
+⚠️ Important:
+  • Must have network monitoring active
+  • HAR data can be very large
+  • Compatible with HAR viewers and analysis tools
+
+Example:
+  browser_net_export_har({})
+  browser_net_export_har({ includeContent: true })
+`,
+
+    browser_net_get_websocket_frames: `
+📖 browser_net_get_websocket_frames(requestId)
+
+Get WebSocket frames for inspecting real-time communication.
+
+Parameters:
+  • requestId (string, required) - Request ID from network monitoring
+
+Returns:
+  { content: [{ type: 'text', text: 'WebSocket Frames: [...]' }] }
+
+Return Structure:
+  [
+    {
+      direction: 'sent' | 'received',
+      opcode: number,
+      payloadLength: number,
+      payload: string,  // First 100 chars
+      timestamp: string
+    }
+  ]
+
+Use Case:
+  • Debug WebSocket communication
+  • Inspect real-time message flow
+  • Analyze WebSocket protocols
+
+Example:
+  browser_net_get_websocket_frames({ requestId: '1234.5' })
+`,
+
+    browser_net_set_request_blocking: `
+📖 browser_net_set_request_blocking(patterns)
+
+Block requests matching URL patterns.
+
+Parameters:
+  • patterns (array, required) - URL patterns to block (e.g., ["*.jpg", "*analytics*"])
+
+Returns:
+  { content: [{ type: 'text', text: 'Request blocking enabled...' }] }
+
+Behavior:
+  • Blocks requests before they're sent
+  • Supports wildcard patterns
+  • Useful for testing without certain resources
+
+Use Case:
+  • Block ads and trackers
+  • Test page without images
+  • Simulate missing resources
+
+Example:
+  browser_net_set_request_blocking({ patterns: ['*.jpg', '*.png'] })
+  browser_net_set_request_blocking({ patterns: ['*analytics*', '*tracking*'] })
+`,
+
+    browser_net_emulate_conditions: `
+📖 browser_net_emulate_conditions(offline, latency, downloadThroughput, uploadThroughput)
+
+Emulate network conditions (throttling).
+
+Parameters:
+  • offline (boolean, required) - Emulate offline mode
+  • latency (number, required) - Round-trip latency in ms
+  • downloadThroughput (number, required) - Download speed in bytes/second (-1 for unlimited)
+  • uploadThroughput (number, required) - Upload speed in bytes/second (-1 for unlimited)
+
+Returns:
+  { content: [{ type: 'text', text: 'Network conditions applied: {...}' }] }
+
+Common Presets:
+  • Fast 3G: { offline: false, latency: 562.5, downloadThroughput: 180000, uploadThroughput: 84000 }
+  • Slow 3G: { offline: false, latency: 2000, downloadThroughput: 50000, uploadThroughput: 50000 }
+  • Offline: { offline: true, latency: 0, downloadThroughput: 0, uploadThroughput: 0 }
+
+Use Case:
+  • Test on slow connections
+  • Simulate offline behavior
+  • Performance testing
+
+Example:
+  browser_net_emulate_conditions({ offline: false, latency: 100, downloadThroughput: 1000000, uploadThroughput: 500000 })
+`,
+
+    // ========================================
+    // Security Testing Tools (CDP)
+    // ========================================
+
+    browser_sec_get_security_headers: `
+📖 browser_sec_get_security_headers()
+
+Inspect security-related HTTP headers.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Security Headers: {...}' }] }
+
+Return Structure:
+  {
+    'content-security-policy': string,
+    'strict-transport-security': string,
+    'x-frame-options': string,
+    'x-content-type-options': string,
+    'referrer-policy': string,
+    'permissions-policy': string
+  }
+
+Use Case:
+  • Security audits
+  • Verify CSP configuration
+  • Check HTTPS enforcement
+
+⚠️ Note:
+  • May require network monitoring for some headers
+  • Shows 'Not set' for missing headers
+
+Example:
+  browser_sec_get_security_headers({})
+`,
+
+    browser_sec_get_certificate_info: `
+📖 browser_sec_get_certificate_info()
+
+Get TLS/SSL certificate details for HTTPS sites.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Certificate Information: {...}' }] }
+
+⚠️ Important:
+  • Only works on HTTPS pages
+  • Returns error on HTTP pages
+  • Detailed certificate info requires monitoring during page load
+
+Use Case:
+  • Verify certificate validity
+  • Check TLS configuration
+  • Security compliance testing
+
+Example:
+  browser_sec_get_certificate_info({})
+`,
+
+    browser_sec_detect_mixed_content: `
+📖 browser_sec_detect_mixed_content()
+
+Detect mixed content warnings (HTTPS page loading HTTP resources).
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Mixed Content Detected: {...}' }] }
+
+Return Structure:
+  {
+    total: number,
+    blocked: number,
+    issues: [
+      { url: string, type: 'script' | 'image' | 'stylesheet', blocked: boolean }
+    ]
+  }
+
+⚠️ Important:
+  • Only applies to HTTPS pages
+  • Scripts are usually blocked by browser
+  • Images/stylesheets may load with warning
+
+Use Case:
+  • Security audits
+  • HTTPS migration testing
+  • Find insecure resources
+
+Example:
+  browser_sec_detect_mixed_content({})
+`,
+
+    browser_sec_start_csp_monitoring: `
+📖 browser_sec_start_csp_monitoring()
+
+Monitor Content Security Policy violations.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'CSP violation monitoring started...' }] }
+
+Behavior:
+  • Captures CSP violation console messages
+  • Must call browser_sec_get_csp_violations to view
+  • Call browser_sec_stop_csp_monitoring to stop
+
+Use Case:
+  • Debug CSP configuration
+  • Find policy violations
+  • Security testing
+
+Example:
+  browser_sec_start_csp_monitoring({})
+`,
+
+    browser_sec_get_csp_violations: `
+📖 browser_sec_get_csp_violations()
+
+Get captured CSP violations.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'CSP Violations: {...}' }] }
+
+Return Structure:
+  {
+    total: number,
+    violations: [
+      {
+        timestamp: string,
+        message: string,
+        level: string,
+        source: string
+      }
+    ]
+  }
+
+⚠️ Important:
+  • Must call browser_sec_start_csp_monitoring first
+  • Violations captured in real-time
+
+Example:
+  browser_sec_get_csp_violations({})
+`,
+
+    browser_sec_stop_csp_monitoring: `
+📖 browser_sec_stop_csp_monitoring()
+
+Stop CSP monitoring and clear violations.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'CSP monitoring stopped. Captured X violations...' }] }
+
+Behavior:
+  • Stops monitoring
+  • Clears violation log
+  • Removes event listeners
+
+Example:
+  browser_sec_stop_csp_monitoring({})
+`,
+
+    // ========================================
+    // Storage & Service Workers Tools (CDP)
+    // ========================================
+
+    browser_storage_get_indexeddb: `
+📖 browser_storage_get_indexeddb(databaseName?, objectStoreName?)
+
+Inspect IndexedDB databases and their data.
+
+Parameters:
+  • databaseName (string, optional) - Specific database to inspect
+  • objectStoreName (string, optional) - Specific object store to query (requires databaseName)
+
+Returns:
+  { content: [{ type: 'text', text: 'IndexedDB Databases/Data: {...}' }] }
+
+Return Structure (no params):
+  { origin: string, databases: string[] }
+
+Return Structure (databaseName only):
+  {
+    name: string,
+    version: number,
+    objectStores: [
+      { name: string, keyPath: any, autoIncrement: boolean, indexes: [...] }
+    ]
+  }
+
+Return Structure (both params):
+  {
+    objectStore: string,
+    entries: number,
+    hasMore: boolean,
+    data: [ { key: any, primaryKey: any, value: any } ]
+  }
+
+⚠️ Important:
+  • Limited to 100 entries per query
+  • May require page to have used IndexedDB first
+
+Example:
+  browser_storage_get_indexeddb({})
+  browser_storage_get_indexeddb({ databaseName: 'myDB' })
+  browser_storage_get_indexeddb({ databaseName: 'myDB', objectStoreName: 'users' })
+`,
+
+    browser_storage_get_cache_storage: `
+📖 browser_storage_get_cache_storage(cacheName?)
+
+List Cache Storage API caches and their entries.
+
+Parameters:
+  • cacheName (string, optional) - Specific cache to inspect
+
+Returns:
+  { content: [{ type: 'text', text: 'Cache Storage Caches/Entries: {...}' }] }
+
+Return Structure (no cacheName):
+  { origin: string, caches: string[] }
+
+Return Structure (with cacheName):
+  {
+    cacheName: string,
+    entryCount: number,
+    entries: [
+      {
+        requestURL: string,
+        requestMethod: string,
+        responseStatus: number,
+        responseType: string
+      }
+    ]
+  }
+
+⚠️ Important:
+  • Limited to 50 entries per cache
+  • Requires page to use Cache Storage API
+
+Example:
+  browser_storage_get_cache_storage({})
+  browser_storage_get_cache_storage({ cacheName: 'my-cache-v1' })
+`,
+
+    browser_storage_delete_cache: `
+📖 browser_storage_delete_cache(cacheName)
+
+Delete a specific cache from Cache Storage.
+
+Parameters:
+  • cacheName (string, required) - Cache name to delete
+
+Returns:
+  { content: [{ type: 'text', text: 'Cache deleted successfully: ...' }] }
+
+⚠️ Warning:
+  • This permanently deletes the cache
+  • Cannot be undone
+  • May affect offline functionality
+
+Example:
+  browser_storage_delete_cache({ cacheName: 'old-cache-v1' })
+`,
+
+    browser_storage_get_service_workers: `
+📖 browser_storage_get_service_workers()
+
+Get service worker registrations and their state.
+
+Parameters:
+  None
+
+Returns:
+  { content: [{ type: 'text', text: 'Service Workers: {...}' }] }
+
+Return Structure:
+  [
+    {
+      scope: string,
+      active: { scriptURL: string, state: string },
+      installing: { scriptURL: string, state: string },
+      waiting: { scriptURL: string, state: string }
+    }
+  ]
+
+States:
+  • installing - Being installed
+  • installed - Installed, waiting to activate
+  • activating - Being activated
+  • activated - Active and running
+  • redundant - Replaced by newer version
+
+Example:
+  browser_storage_get_service_workers({})
+`,
+
+    browser_storage_unregister_service_worker: `
+📖 browser_storage_unregister_service_worker(scopeURL)
+
+Unregister a service worker.
+
+Parameters:
+  • scopeURL (string, required) - Scope URL of service worker to unregister
+
+Returns:
+  { content: [{ type: 'text', text: 'Service worker unregistered successfully...' }] }
+
+⚠️ Warning:
+  • This removes the service worker registration
+  • May affect offline functionality
+  • Page may need reload to take effect
+
+Example:
+  browser_storage_unregister_service_worker({ scopeURL: 'https://example.com/' })
 `
 };
 

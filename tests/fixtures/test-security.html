@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'">
+    <title>Security Test Page</title>
+</head>
+<body>
+    <h1>Security Test Page</h1>
+    <p>This page is used for testing security features.</p>
+    <div id="status"></div>
+
+    <script>
+        // This inline script is allowed by CSP
+        document.getElementById('status').innerHTML = 'Page loaded successfully';
+
+        // Attempt to trigger CSP violation by trying to load external script
+        // (This will be blocked and create a CSP violation)
+        try {
+            const script = document.createElement('script');
+            script.src = 'https://example.com/external.js';
+            document.head.appendChild(script);
+        } catch (e) {
+            console.log('CSP blocked external script');
+        }
+
+        // Log security info
+        console.log('Page protocol:', window.location.protocol);
+        console.log('Page origin:', window.location.origin);
+    </script>
+</body>
+</html>

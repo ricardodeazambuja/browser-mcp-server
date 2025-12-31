@@ -104,6 +104,10 @@ const handlers = {
             browserProfile = process.env.MCP_BROWSER_PROFILE || `${os.tmpdir()}/chrome-mcp-profile`;
         }
 
+        // Get dynamic tool count (loaded at runtime to avoid circular dependency)
+        const { tools } = require('./index');
+        const toolCount = tools.length;
+
         return {
             content: [{
                 type: 'text',
@@ -113,7 +117,7 @@ const handlers = {
                     `✅ Chrome: Port 9222\n` +
                     `✅ Profile: ${browserProfile}\n` +
                     `✅ Current page: ${url}\n\n` +
-                    `All 37 browser tools are ready to use!`
+                    `All ${toolCount} browser tools are ready to use!`
             }]
         };
     },

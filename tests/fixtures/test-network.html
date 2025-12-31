@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Test Page</title>
+</head>
+<body>
+    <h1>Network Test Page</h1>
+    <p>This page makes multiple network requests for testing.</p>
+    <div id="status"></div>
+
+    <script>
+        async function makeNetworkRequests() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Making network requests...<br>';
+
+            try {
+                // Make multiple fetch requests
+                const urls = [
+                    'https://jsonplaceholder.typicode.com/posts/1',
+                    'https://jsonplaceholder.typicode.com/posts/2',
+                    'https://jsonplaceholder.typicode.com/users/1'
+                ];
+
+                for (const url of urls) {
+                    try {
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        status.innerHTML += `✓ Fetched: ${url}<br>`;
+                    } catch (e) {
+                        status.innerHTML += `✗ Failed: ${url} - ${e.message}<br>`;
+                    }
+                }
+
+                status.innerHTML += 'Network requests completed!';
+            } catch (error) {
+                status.innerHTML += `Error: ${error.message}`;
+            }
+        }
+
+        // Auto-run after page load
+        window.addEventListener('load', () => {
+            setTimeout(makeNetworkRequests, 500);
+        });
+    </script>
+</body>
+</html>

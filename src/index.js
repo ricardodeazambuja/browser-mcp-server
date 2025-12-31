@@ -66,7 +66,7 @@ class BrowserMCPServer {
             capabilities: { tools: {} },
             serverInfo: {
                 name: 'browser-automation-playwright',
-                version: '1.3.0'
+                version: '1.4.0'
             }
         });
     }

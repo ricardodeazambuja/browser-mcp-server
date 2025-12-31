@@ -15,7 +15,11 @@ const coreModules = [
     'console',
     'info',
     'system',
-    'docs'
+    'docs',
+    'performance',
+    'network',
+    'security',
+    'storage'
 ];
 
 // Load core tools

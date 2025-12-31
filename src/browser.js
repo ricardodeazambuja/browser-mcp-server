@@ -4,6 +4,7 @@
 
 const os = require('os');
 const { debugLog, loadPlaywright, findChromeExecutable } = require('./utils');
+const { resetCDPSession } = require('./cdp');
 
 // Browser state
 let browser = null;
@@ -140,6 +141,7 @@ function resetBrowserState() {
     context = null;
     page = null;
     activePageIndex = 0;
+    resetCDPSession();
 }
 
 module.exports = {

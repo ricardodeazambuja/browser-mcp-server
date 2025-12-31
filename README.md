@@ -2,14 +2,14 @@
 
 A universal browser automation MCP server using Playwright. Control Chrome programmatically through the Model Context Protocol.
 
-**37 powerful browser automation tools** including multi-tab management, media monitoring/control, low-level interaction, session recording, and on-demand documentation.
+**63 powerful browser automation tools** including multi-tab management, media monitoring/control, low-level interaction, session recording, CDP-based performance profiling, network analysis, security testing, and on-demand documentation.
 
 ## Features
 
 - ✅ **Smart Chrome Detection**: Automatically finds and uses system Chrome/Chromium
 - ✅ **Three-Tier Strategy**: Antigravity Chrome → System Chrome → Playwright Chromium
 - ✅ **Universal**: Works with Antigravity, Claude Desktop, and any MCP client
-- ✅ **37 Tools**: Media control, multi-tab, pixel-based interaction, and more
+- ✅ **63 Tools**: Media control, multi-tab, pixel-based interaction, CDP power user tools, and more
 - ✅ **On-Demand Docs**: Built-in documentation tool with return schemas and examples
 - ✅ **Auto-Install**: Playwright installed automatically via npm (no manual setup)
 - ✅ **Safe**: Isolated browser profile (won't touch your personal Chrome)
@@ -253,7 +253,7 @@ gemini mcp add --timeout 30000 browser node /path/to/src/index.js
 gemini mcp add --trust browser node /path/to/src/index.js
 ```
 
-## Available Tools (37)
+## Available Tools (63)
 
 ### Documentation
 1. **browser_docs(toolName?)** - Get detailed docs, return schemas, examples, and caveats for any tool
@@ -307,6 +307,79 @@ gemini mcp add --trust browser node /path/to/src/index.js
 35. **browser_start_video_recording(path?)** - Start session recording
 36. **browser_stop_video_recording()** - Stop and save recording
 37. **browser_health_check()** - Verify browser connection
+
+## 🔬 Power User Tools (CDP-Based)
+
+Advanced diagnostic tools using Chrome DevTools Protocol for performance analysis, network debugging, security testing, and storage inspection. These 26 additional tools provide deep insights into browser internals.
+
+### Performance Profiling (8 tools)
+38. **browser_perf_start_profile(sampleInterval?)** - Start CPU profiling
+39. **browser_perf_stop_profile()** - Get CPU profile data with summary
+40. **browser_perf_take_heap_snapshot(reportProgress?)** - Capture memory snapshot
+41. **browser_perf_get_heap_usage()** - Current JavaScript heap statistics
+42. **browser_perf_get_metrics()** - Runtime metrics (DOM nodes, listeners, etc.)
+43. **browser_perf_get_performance_metrics()** - Web vitals (FCP, LCP, CLS, TTFB)
+44. **browser_perf_start_coverage(resetOnNavigation?)** - Track code coverage
+45. **browser_perf_stop_coverage()** - Get coverage results
+
+**Use Cases**: Memory leak detection, CPU profiling, performance optimization, code coverage analysis, web vitals monitoring
+
+### Network Analysis (7 tools)
+46. **browser_net_start_monitoring(patterns?)** - Monitor network requests
+47. **browser_net_get_requests(filter?)** - Get captured requests with timing
+48. **browser_net_stop_monitoring()** - Stop monitoring and clear log
+49. **browser_net_export_har(includeContent?)** - Export HTTP Archive log
+50. **browser_net_get_websocket_frames(requestId)** - Inspect WebSocket frames
+51. **browser_net_set_request_blocking(patterns)** - Block URL patterns
+52. **browser_net_emulate_conditions(offline, latency, download, upload)** - Network throttling
+
+**Use Cases**: API debugging, HAR export, WebSocket debugging, performance testing, request blocking, network throttling
+
+### Security Testing (6 tools)
+53. **browser_sec_get_security_headers()** - Inspect security HTTP headers
+54. **browser_sec_get_certificate_info()** - TLS/SSL certificate details
+55. **browser_sec_detect_mixed_content()** - Find HTTP resources on HTTPS pages
+56. **browser_sec_start_csp_monitoring()** - Monitor CSP violations
+57. **browser_sec_get_csp_violations()** - Get violation log
+58. **browser_sec_stop_csp_monitoring()** - Stop monitoring
+
+**Use Cases**: Security audits, CSP debugging, HTTPS migration, certificate validation, mixed content detection
+
+### Storage & Service Workers (5 tools)
+59. **browser_storage_get_indexeddb(databaseName?, objectStoreName?)** - Inspect IndexedDB
+60. **browser_storage_get_cache_storage(cacheName?)** - List Cache Storage entries
+61. **browser_storage_delete_cache(cacheName)** - Delete cache
+62. **browser_storage_get_service_workers()** - Service worker state
+63. **browser_storage_unregister_service_worker(scopeURL)** - Unregister worker
+
+**Use Cases**: IndexedDB inspection, Cache Storage management, Service Worker debugging, offline functionality testing
+
+### Getting Started with CDP Tools
+
+```javascript
+// Start CPU profiling
+browser_perf_start_profile({})
+// ... perform actions to profile ...
+browser_perf_stop_profile({})  // Get results
+
+// Monitor network activity
+browser_net_start_monitoring({})
+// ... navigate and interact ...
+browser_net_get_requests({ filter: 'api' })
+browser_net_export_har({})
+
+// Security audit
+browser_sec_get_security_headers({})
+browser_sec_start_csp_monitoring({})
+// ... trigger violations ...
+browser_sec_get_csp_violations({})
+
+// Inspect storage
+browser_storage_get_indexeddb({ databaseName: 'myDB' })
+browser_storage_get_cache_storage({ cacheName: 'my-cache-v1' })
+```
+
+**Note**: All CDP tools have comprehensive documentation available via `browser_docs({ toolName: 'browser_perf_start_profile' })`.
 
 ## On-Demand Documentation
 

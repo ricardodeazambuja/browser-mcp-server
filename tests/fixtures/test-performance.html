@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Performance Test Page</h1>
+        <p>This page is used for testing CPU profiling and performance metrics.</p>
+        <button id="heavy-compute">Run Heavy Computation</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        // Heavy computation for CPU profiling test
+        function fibonacci(n) {
+            if (n <= 1) return n;
+            return fibonacci(n - 1) + fibonacci(n - 2);
+        }
+
+        function performHeavyComputation() {
+            const start = Date.now();
+            const result = fibonacci(35);
+            const duration = Date.now() - start;
+            document.getElementById('output').innerHTML =
+                `Computed fibonacci(35) = ${result} in ${duration}ms`;
+        }
+
+        // Auto-run computation for testing
+        document.getElementById('heavy-compute').addEventListener('click', performHeavyComputation);
+
+        // Run automatically after a short delay
+        setTimeout(performHeavyComputation, 100);
+
+        // Create some DOM nodes for metrics testing
+        for (let i = 0; i < 100; i++) {
+            const div = document.createElement('div');
+            div.textContent = `Node ${i}`;
+            div.style.display = 'none';
+            document.body.appendChild(div);
+        }
+
+        // Add event listeners for metrics testing
+        for (let i = 0; i < 50; i++) {
+            document.body.addEventListener('click', () => {});
+        }
+    </script>
+</body>
+</html>

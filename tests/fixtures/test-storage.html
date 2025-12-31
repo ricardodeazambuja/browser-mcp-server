@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storage Test Page</title>
+</head>
+<body>
+    <h1>Storage Test Page</h1>
+    <p>This page creates IndexedDB and Cache Storage for testing.</p>
+    <div id="status"></div>
+
+    <script>
+        async function setupStorage() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Setting up storage...<br>';
+
+            try {
+                // Create IndexedDB
+                const dbRequest = indexedDB.open('testDB', 1);
+
+                dbRequest.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('users')) {
+                        const objectStore = db.createObjectStore('users', { keyPath: 'id' });
+                        objectStore.createIndex('name', 'name', { unique: false });
+                    }
+                };
+
+                dbRequest.onsuccess = async (event) => {
+                    const db = event.target.result;
+                    const transaction = db.transaction(['users'], 'readwrite');
+                    const objectStore = transaction.objectStore('users');
+
+                    // Add some data
+                    objectStore.add({ id: 1, name: 'Alice', email: 'alice@example.com' });
+                    objectStore.add({ id: 2, name: 'Bob', email: 'bob@example.com' });
+
+                    status.innerHTML += '✓ IndexedDB created and populated<br>';
+
+                    // Create Cache Storage
+                    if ('caches' in window) {
+                        const cache = await caches.open('test-cache-v1');
+                        await cache.put('/test', new Response('Test data'));
+                        status.innerHTML += '✓ Cache Storage created<br>';
+                    }
+
+                    // Register Service Worker (if supported)
+                    if ('serviceWorker' in navigator) {
+                        try {
+                            // Note: Service worker registration requires HTTPS or localhost
+                            status.innerHTML += 'Service Worker registration skipped (requires HTTPS)<br>';
+                        } catch (e) {
+                            status.innerHTML += `Service Worker: ${e.message}<br>`;
+                        }
+                    }
+
+                    status.innerHTML += 'Storage setup complete!';
+                };
+
+                dbRequest.onerror = (event) => {
+                    status.innerHTML += `✗ IndexedDB error: ${event.target.error}<br>`;
+                };
+
+            } catch (error) {
+                status.innerHTML += `Error: ${error.message}`;
+            }
+        }
+
+        // Auto-run after page load
+        window.addEventListener('load', () => {
+            setTimeout(setupStorage, 500);
+        });
+    </script>
+</body>
+</html>
