@@ -1,7 +1,6 @@
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 const { debugLog } = require('../utils');
 
-// Local state for console tool
 let consoleLogs = [];
 let consoleListening = false;
 
@@ -51,8 +50,7 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_console_start: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_console_start: withPage(async (page) => {
         if (!consoleListening) {
             page.on('console', msg => {
                 const logEntry = {
@@ -73,7 +71,7 @@ const handlers = {
                 text: `✅ Console logging started.\n\nCapturing: console.log, console.error, console.warn, console.info, console.debug\n\nUse browser_console_get to retrieve captured logs.`
             }]
         };
-    },
+    }),
 
     browser_console_get: async (args) => {
         const filter = args.filter;
@@ -113,14 +111,10 @@ const handlers = {
         };
     },
 
-    browser_console_clear: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_console_clear: withPage(async (page) => {
         const count = consoleLogs.length;
         consoleLogs = [];
         if (consoleListening) {
-            // Removing listeners is tricky if we don't store the reference to the specific function we passed
-            // But page.removeAllListeners('console') is cleaner if we are the only one using it.
-            // In this server context, we likely are.
             if (page) {
                 page.removeAllListeners('console');
             }
@@ -133,7 +127,7 @@ const handlers = {
                 text: `✅ Cleared ${count} console log${count === 1 ? '' : 's'} and stopped listening.\n\nUse browser_console_start to resume capturing.`
             }]
         };
-    }
+    })
 };
 
 module.exports = { definitions, handlers };

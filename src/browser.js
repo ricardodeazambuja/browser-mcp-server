@@ -17,7 +17,6 @@ let activePageIndex = 0;
  * @returns {Object} { browser, context, page }
  */
 async function connectToBrowser() {
-    // Check if browser is disconnected or closed
     if (browser && (!browser.isConnected || !browser.isConnected())) {
         debugLog('Browser connection lost, resetting...');
         browser = null;
@@ -29,7 +28,6 @@ async function connectToBrowser() {
         try {
             const pw = loadPlaywright();
 
-            // STRATEGY 1: Try to connect to existing Chrome (Antigravity mode)
             try {
                 debugLog('Attempting to connect to Chrome on port 9222...');
                 browser = await pw.chromium.connectOverCDP('http://localhost:9222');
@@ -41,7 +39,6 @@ async function connectToBrowser() {
                 debugLog(`Could not connect to existing Chrome: ${connectError.message}`);
             }
 
-            // STRATEGY 2: Launch our own Chrome (Standalone mode)
             if (!browser) {
                 debugLog('No existing Chrome found. Launching new instance...');
 
@@ -101,7 +98,6 @@ async function connectToBrowser() {
         }
     }
 
-    // Ensure we have a context and page
     if (!context) {
         const contexts = browser.contexts();
         context = contexts.length > 0 ? contexts[0] : await browser.newContext();
@@ -120,22 +116,23 @@ async function connectToBrowser() {
 }
 
 /**
- * Get browser state
+ * HOF to wrap tool handlers with browser connection logic
  */
+function withPage(handler) {
+    return async (args) => {
+        const { page } = await connectToBrowser();
+        return handler(page, args);
+    };
+}
+
 function getBrowserState() {
     return { browser, context, page, activePageIndex };
 }
 
-/**
- * Set active page index
- */
 function setActivePageIndex(index) {
     activePageIndex = index;
 }
 
-/**
- * Reset browser state
- */
 function resetBrowserState() {
     browser = null;
     context = null;
@@ -148,5 +145,6 @@ module.exports = {
     connectToBrowser,
     getBrowserState,
     setActivePageIndex,
-    resetBrowserState
+    resetBrowserState,
+    withPage
 };

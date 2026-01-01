@@ -1,4 +1,4 @@
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 
 const definitions = [
     {
@@ -42,12 +42,10 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_get_media_summary: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_get_media_summary: withPage(async (page) => {
         const mediaState = await page.evaluate(() => {
             const elements = Array.from(document.querySelectorAll('audio, video'));
             return elements.map((el, index) => {
-                // Calculate buffered ranges
                 const buffered = [];
                 for (let i = 0; i < el.buffered.length; i++) {
                     buffered.push([el.buffered.start(i), el.buffered.end(i)]);
@@ -87,45 +85,35 @@ const handlers = {
                 text: JSON.stringify(mediaState, null, 2)
             }]
         };
-    },
+    }),
 
-    browser_get_audio_analysis: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_get_audio_analysis: withPage(async (page, args) => {
         const duration = args.durationMs || 2000;
         const selector = args.selector;
 
         const analysis = await page.evaluate(async ({ duration, selector }) => {
             return new Promise(async (resolve) => {
                 try {
-                    // 1. Find element
                     let element;
                     if (selector) {
                         element = document.querySelector(selector);
                     } else {
-                        // Pick the first one playing or just the first one
                         const all = Array.from(document.querySelectorAll('audio, video'));
                         element = all.find(e => !e.paused) || all[0];
                     }
 
                     if (!element) return resolve({ error: 'No media element found' });
 
-                    // 2. Setup AudioContext (handle browser policies)
                     const CtxClass = window.AudioContext || window.webkitAudioContext;
                     if (!CtxClass) return resolve({ error: 'Web Audio API not supported' });
 
                     const ctx = new CtxClass();
-
-                    // Resume context if suspended (common in browsers)
                     if (ctx.state === 'suspended') await ctx.resume();
 
-                    // 3. Create Source & Analyzer
-                    // Note: MediaElementSource requires the element to allow CORS if cross-origin
                     let source;
                     try {
                         source = ctx.createMediaElementSource(element);
                     } catch (e) {
-                        // If already connected or tainted, this might fail. 
-                        // We can try to reconnect or just capture current data if available.
                         return resolve({ error: `Cannot connect to media source: ${e.message}. (Check CORS headers)` });
                     }
 
@@ -137,13 +125,11 @@ const handlers = {
                     source.connect(analyzer);
                     analyzer.connect(ctx.destination);
 
-                    // 4. Collect samples over duration
                     const samples = [];
                     const startTime = Date.now();
                     const interval = setInterval(() => {
                         analyzer.getByteFrequencyData(dataArray);
 
-                        // Calculate instant stats
                         let sum = 0;
                         let max = 0;
                         for (let i = 0; i < bufferLength; i++) {
@@ -159,26 +145,21 @@ const handlers = {
                             clearInterval(interval);
                             finalize();
                         }
-                    }, 100); // 10 samples per second
+                    }, 100);
 
                     function finalize() {
-                        // Clean up
                         try {
                             source.disconnect();
                             analyzer.disconnect();
                             ctx.close();
                         } catch (e) { }
 
-                        // Aggregate
                         if (samples.length === 0) return resolve({ status: 'No samples' });
 
                         const totalAvg = samples.reduce((a, b) => a + b.avg, 0) / samples.length;
                         const grandMax = Math.max(...samples.map(s => s.max));
-                        const isSilent = grandMax < 5; // Low threshold
+                        const isSilent = grandMax < 5;
 
-                        // Bucket frequencies (Simple approximation)
-                        // 128 bins over Nyquist (e.g. 24kHz). 
-                        // Bass (0-4), Mid (5-40), Treble (41-127) roughly
                         const bassSum = samples.reduce((acc, s) => {
                             return acc + s.data.slice(0, 5).reduce((a, b) => a + b, 0) / 5;
                         }, 0) / samples.length;
@@ -217,10 +198,9 @@ const handlers = {
                 text: JSON.stringify(analysis, null, 2)
             }]
         };
-    },
+    }),
 
-    browser_control_media: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_control_media: withPage(async (page, args) => {
         const controlResult = await page.evaluate(async ({ selector, action, value }) => {
             const el = document.querySelector(selector);
             if (!el) return { error: `Element not found: ${selector}` };
@@ -258,7 +238,7 @@ const handlers = {
                 text: JSON.stringify(controlResult, null, 2)
             }]
         };
-    }
+    })
 };
 
 module.exports = { definitions, handlers };

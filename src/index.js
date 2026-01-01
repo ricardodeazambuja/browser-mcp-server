@@ -6,7 +6,7 @@
  */
 
 const readline = require('readline');
-const { debugLog, version } = require('./utils');
+const { debugLog, version, MCP_PROTOCOL_VERSION } = require('./utils');
 const { tools, handlers, setNotificationCallback } = require('./tools');
 const { getBrowserState } = require('./browser');
 
@@ -18,7 +18,6 @@ class BrowserMCPServer {
             terminal: false
         });
 
-        // Register callback for tool list changes
         setNotificationCallback(() => {
             this.notify('notifications/tools/list_changed');
         });
@@ -27,12 +26,7 @@ class BrowserMCPServer {
     }
 
     init() {
-        debugLog('Server starting via src/index.js...');
-
-        // Process stdin lines as MCP requests
         this.rl.on('line', (line) => this.handleLine(line));
-
-        // Handle cleanup
         process.on('SIGTERM', () => this.cleanup());
         process.on('SIGINT', () => this.cleanup());
     }
@@ -57,8 +51,6 @@ class BrowserMCPServer {
             }
         } catch (error) {
             debugLog(`Error processing request: ${error.message}`);
-            // Only log to stderr if it's not a JSON parse error (which would break MCP)
-            // Actually, stderr is fine, just don't write to stdout unless it's a JSON-RPC response
             const id = request?.id || null;
             this.respond(id, null, { code: -32603, message: error.message });
         }
@@ -67,7 +59,7 @@ class BrowserMCPServer {
     handleInitialize(request) {
         debugLog(`Initialize with protocol: ${request.params.protocolVersion}`);
         this.respond(request.id, {
-            protocolVersion: request.params.protocolVersion || '2024-11-05',
+            protocolVersion: request.params.protocolVersion || MCP_PROTOCOL_VERSION,
             capabilities: { tools: {} },
             serverInfo: {
                 name: 'browser-automation-playwright',

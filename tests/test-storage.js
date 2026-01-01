@@ -136,66 +136,65 @@ const steps = [
         }),
         verify: () => { }
     },
-    {
-        name: 'List IndexedDB Databases',
-        method: 'tools/call',
-        params: () => ({
-            name: 'browser_storage_get_indexeddb',
-            arguments: {}
-        }),
-        verify: (res) => {
-            const text = res.result.content[0].text;
-            // Should list databases, indicate none found, or CDP error
-            if (!text.includes('databases') && !text.includes('No IndexedDB') && !text.includes('CDP Error') && !text.includes('Error')) {
-                throw new Error('Unexpected response: ' + text.substring(0, 100));
+        {
+            name: 'List IndexedDB Databases',
+            method: 'tools/call',
+            params: () => ({
+                name: 'browser_storage_get_indexeddb',
+                arguments: {}
+            }),
+            verify: (res) => {
+                const text = res.result.content[0].text;
+                // Should list databases (now just an array stringified usually)
+                if (!text.includes('Databases') && !text.includes('No IndexedDB') && !text.includes('CDP Error') && !text.includes('Error')) {
+                    throw new Error('Unexpected response: ' + text.substring(0, 100));
+                }
+            }
+        },
+        {
+            name: 'Inspect IndexedDB Database',
+            method: 'tools/call',
+            params: () => ({
+                name: 'browser_storage_get_indexeddb',
+                arguments: { databaseName: 'testDB' }
+            }),
+            verify: (res) => {
+                const text = res.result.content[0].text;
+                // Should show structure
+                if (!text.includes('Structure') && !text.includes('not found') && !text.includes('error') && !text.includes('Error') && !text.includes('CDP Error')) {
+                    throw new Error('Unexpected response: ' + text.substring(0, 100));
+                }
+            }
+        },
+        {
+            name: 'List Cache Storage',
+            method: 'tools/call',
+            params: () => ({
+                name: 'browser_storage_get_cache_storage',
+                arguments: {}
+            }),
+            verify: (res) => {
+                const text = res.result.content[0].text;
+                if (!text.includes('Caches') && !text.includes('No Cache') && !text.includes('CDP Error') && !text.includes('Error')) {
+                    throw new Error('Unexpected response: ' + text.substring(0, 100));
+                }
+            }
+        },
+        {
+            name: 'Inspect Cache Entries',
+            method: 'tools/call',
+            params: () => ({
+                name: 'browser_storage_get_cache_storage',
+                arguments: { cacheName: 'test-cache-v1' }
+            }),
+            verify: (res) => {
+                const text = res.result.content[0].text;
+                if (!text.includes('Entries') && !text.includes('not found') && !text.includes('CDP Error') && !text.includes('Error')) {
+                    throw new Error('Unexpected response: ' + text.substring(0, 100));
+                }
             }
         }
-    },
-    {
-        name: 'Inspect IndexedDB Database',
-        method: 'tools/call',
-        params: () => ({
-            name: 'browser_storage_get_indexeddb',
-            arguments: { databaseName: 'testDB' }
-        }),
-        verify: (res) => {
-            const text = res.result.content[0].text;
-            // Should show database structure or error if not found
-            if (!text.includes('objectStores') && !text.includes('not found') && !text.includes('error') && !text.includes('Error') && !text.includes('CDP Error')) {
-                throw new Error('Unexpected response: ' + text.substring(0, 100));
-            }
-        }
-    },
-    {
-        name: 'List Cache Storage',
-        method: 'tools/call',
-        params: () => ({
-            name: 'browser_storage_get_cache_storage',
-            arguments: {}
-        }),
-        verify: (res) => {
-            const text = res.result.content[0].text;
-            // Should list caches, indicate none found, or error
-            if (!text.includes('caches') && !text.includes('No Cache') && !text.includes('CDP Error') && !text.includes('Error')) {
-                throw new Error('Unexpected response: ' + text.substring(0, 100));
-            }
-        }
-    },
-    {
-        name: 'Inspect Cache Entries',
-        method: 'tools/call',
-        params: () => ({
-            name: 'browser_storage_get_cache_storage',
-            arguments: { cacheName: 'test-cache-v1' }
-        }),
-        verify: (res) => {
-            const text = res.result.content[0].text;
-            // Should show cache entries, not found, or error
-            if (!text.includes('entries') && !text.includes('not found') && !text.includes('CDP Error') && !text.includes('Error')) {
-                throw new Error('Unexpected response: ' + text.substring(0, 100));
-            }
-        }
-    },
+    ,
     {
         name: 'Get Service Workers',
         method: 'tools/call',

@@ -6,37 +6,51 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-// Get version from package.json
+// Version and Protocol
+const MCP_PROTOCOL_VERSION = '2024-11-05';
 let version = 'unknown';
 try {
     const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
     version = pkg.version;
-} catch (error) {
-    // Fallback if package.json cannot be read
-}
+} catch (error) { }
 
-// Log file location
+// Module Configuration
+const MODULE_MAPPING = {
+    'network': ['network'],
+    'performance': ['performance'],
+    'security': ['security'],
+    'storage': ['storage'],
+    'media': ['media'],
+    'tabs': ['pages'],
+    'extraction': ['info_opt'],
+    'advanced': [
+        'mouse', 'keyboard', 'console', 'system',
+        'navigation_opt', 'interaction_opt'
+    ]
+};
+
+const MODULE_DESCRIPTIONS = {
+    'network': 'Network monitoring, HAR export, WebSocket inspection, throttling',
+    'performance': 'CPU profiling, memory snapshots, runtime metrics, web vitals',
+    'security': 'Security headers, TLS/SSL info, CSP monitoring, mixed content detection',
+    'storage': 'IndexedDB, Cache Storage, Service Workers management',
+    'media': 'Audio/Video element inspection, spectral analysis, playback control',
+    'tabs': 'Multi-tab management (new, switch, close, list)',
+    'extraction': 'Advanced data extraction (DOM, text content, page metadata)',
+    'advanced': 'Low-level mouse/keyboard events, console logs, system info'
+};
+
 const logFile = `${os.tmpdir()}/mcp-browser-server.log`;
 
-/**
- * Log debug messages to file
- * @param {string} msg - Message to log
- */
 function debugLog(msg) {
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logFile, `${timestamp} - ${msg}\n`);
 }
 
-// Playwright loading state
 let playwright = null;
 let playwrightError = null;
 let playwrightPath = null;
 
-/**
- * Load Playwright from multiple possible sources
- * @returns {Object} Playwright module
- * @throws {Error} If Playwright cannot be loaded
- */
 function loadPlaywright() {
     if (playwright) return playwright;
     if (playwrightError) throw playwrightError;
@@ -71,18 +85,10 @@ function loadPlaywright() {
     throw playwrightError;
 }
 
-/**
- * Get the path where Playwright was loaded from
- * @returns {string|null} Playwright path or null
- */
 function getPlaywrightPath() {
     return playwrightPath;
 }
 
-/**
- * Find Chrome executable in common locations
- * @returns {string|null} Path to Chrome executable or null
- */
 function findChromeExecutable() {
     const { execSync } = require('child_process');
 
@@ -117,7 +123,6 @@ function findChromeExecutable() {
         }
     }
 
-    debugLog('No system Chrome found');
     return null;
 }
 
@@ -127,5 +132,8 @@ module.exports = {
     getPlaywrightPath,
     findChromeExecutable,
     logFile,
-    version
+    version,
+    MCP_PROTOCOL_VERSION,
+    MODULE_MAPPING,
+    MODULE_DESCRIPTIONS
 };

@@ -1,13 +1,11 @@
 /**
  * Security Testing Tools (CDP-based)
- * Security headers, TLS certificates, mixed content, CSP violations
  */
 
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 const { getCDPSession } = require('../cdp');
 const { debugLog } = require('../utils');
 
-// Local state for security tools
 let cspViolations = [];
 let cspMonitoringActive = false;
 
@@ -75,395 +73,159 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_sec_get_security_headers: async (args) => {
+    browser_sec_get_security_headers: withPage(async (page) => {
         try {
-            const { page } = await connectToBrowser();
-
-            // Get headers from HTTP response or meta tags
             const securityData = await page.evaluate(async () => {
-                const result = {
-                    headers: null,
-                    metaTags: {},
-                    protocol: window.location.protocol
-                };
-
-                // Try to get headers using fetch (works for HTTP/HTTPS)
+                const result = { headers: null, metaTags: {}, protocol: window.location.protocol };
                 if (window.location.protocol.startsWith('http')) {
                     try {
                         const res = await fetch(window.location.href, { method: 'HEAD' });
                         const headers = {};
-                        for (let [key, value] of res.headers.entries()) {
-                            headers[key] = value;
-                        }
+                        for (let [key, value] of res.headers.entries()) headers[key] = value;
                         result.headers = headers;
-                    } catch (e) {
-                        // Fetch failed, will fall back to meta tags
-                    }
+                    } catch (e) { }
                 }
-
-                // Read security-related meta tags (works for file:// and as fallback)
                 const metaTags = document.querySelectorAll('meta[http-equiv]');
                 metaTags.forEach(tag => {
                     const httpEquiv = tag.getAttribute('http-equiv').toLowerCase();
                     const content = tag.getAttribute('content');
-                    if (httpEquiv && content) {
-                        result.metaTags[httpEquiv] = content;
-                    }
+                    if (httpEquiv && content) result.metaTags[httpEquiv] = content;
                 });
-
                 return result;
             });
 
-            // Build security headers object from HTTP headers or meta tags
             const securityHeaders = {
-                'content-security-policy':
-                    securityData.headers?.['content-security-policy'] ||
-                    securityData.metaTags['content-security-policy'] ||
-                    'Not set',
-                'strict-transport-security':
-                    securityData.headers?.['strict-transport-security'] ||
-                    'Not set',
-                'x-frame-options':
-                    securityData.headers?.['x-frame-options'] ||
-                    securityData.metaTags['x-frame-options'] ||
-                    'Not set',
-                'x-content-type-options':
-                    securityData.headers?.['x-content-type-options'] ||
-                    'Not set',
-                'referrer-policy':
-                    securityData.headers?.['referrer-policy'] ||
-                    securityData.metaTags['referrer-policy'] ||
-                    'Not set',
-                'permissions-policy':
-                    securityData.headers?.['permissions-policy'] ||
-                    'Not set',
-                'x-xss-protection':
-                    securityData.headers?.['x-xss-protection'] ||
-                    'Not set (deprecated)'
+                'content-security-policy': securityData.headers?.['content-security-policy'] || securityData.metaTags['content-security-policy'] || 'Not set',
+                'strict-transport-security': securityData.headers?.['strict-transport-security'] || 'Not set',
+                'x-frame-options': securityData.headers?.['x-frame-options'] || securityData.metaTags['x-frame-options'] || 'Not set',
+                'x-content-type-options': securityData.headers?.['x-content-type-options'] || 'Not set',
+                'referrer-policy': securityData.headers?.['referrer-policy'] || securityData.metaTags['referrer-policy'] || 'Not set',
+                'permissions-policy': securityData.headers?.['permissions-policy'] || 'Not set'
             };
-
-            const source = securityData.headers ? 'HTTP headers' : 'meta tags';
 
             return {
                 content: [{
                     type: 'text',
-                    text: `🔒 Security Headers (from ${source}):\n\n${JSON.stringify(securityHeaders, null, 2)}`
+                    text: `🔒 Security Headers:\n\n${JSON.stringify(securityHeaders, null, 2)}`
                 }]
             };
         } catch (error) {
-            debugLog(`Error in browser_sec_get_security_headers: ${error.message}`);
             return {
-                content: [{
-                    type: 'text',
-                    text: `❌ Error: ${error.message}`
-                }],
+                content: [{ type: 'text', text: `❌ Error: ${error.message}` }],
                 isError: true
             };
         }
-    },
+    }),
 
-    browser_sec_get_certificate_info: async (args) => {
+    browser_sec_get_certificate_info: withPage(async (page) => {
         try {
-            const { page } = await connectToBrowser();
             const url = page.url();
-
             if (!url.startsWith('https://')) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: '⚠️ Certificate information only available for HTTPS sites.\n\nCurrent page is not using HTTPS.'
-                    }]
-                };
+                return { content: [{ type: 'text', text: '⚠️ Certificate info only for HTTPS sites.' }] };
             }
 
             const cdp = await getCDPSession();
             await cdp.send('Security.enable');
-
-            // Get security state which includes certificate info
-            const securityState = await page.evaluate(async () => {
-                // Try to get security info from the page context
-                return {
-                    url: window.location.href,
-                    protocol: window.location.protocol
-                };
-            });
-
-            // Note: Getting detailed certificate info via CDP is complex
-            // as it requires monitoring security state changes during navigation
-            // For now, provide basic HTTPS validation info
-
-            const certInfo = {
-                url: url,
-                protocol: 'HTTPS',
-                secure: true,
-                note: 'Detailed certificate inspection requires monitoring during page load. For full certificate details, use browser DevTools Security panel.'
-            };
-
+            const certInfo = { url, protocol: 'HTTPS', secure: true };
             await cdp.send('Security.disable');
 
             return {
                 content: [{
                     type: 'text',
-                    text: `🔒 Certificate Information:\n\n${JSON.stringify(certInfo, null, 2)}\n\nNote: For detailed certificate information (issuer, expiry, subject), use:\n1. Chrome DevTools > Security panel\n2. Or start network monitoring before navigation to capture TLS details`
+                    text: `🔒 Certificate Information: ${JSON.stringify(certInfo, null, 2)}`
                 }]
             };
         } catch (error) {
-            debugLog(`CDP error in browser_sec_get_certificate_info: ${error.message}`);
             return {
-                content: [{
-                    type: 'text',
-                    text: `❌ CDP Error: ${error.message}`
-                }],
+                content: [{ type: 'text', text: `❌ CDP Error: ${error.message}` }],
                 isError: true
             };
         }
-    },
+    }),
 
-    browser_sec_detect_mixed_content: async (args) => {
+    browser_sec_detect_mixed_content: withPage(async (page) => {
         try {
-            const { page } = await connectToBrowser();
             const url = page.url();
-
             if (!url.startsWith('https://')) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: '⚠️ Mixed content detection only applies to HTTPS pages.\n\nCurrent page is not using HTTPS.'
-                    }]
-                };
+                return { content: [{ type: 'text', text: '⚠️ Mixed content detection only for HTTPS.' }] };
             }
 
-            // Detect mixed content by analyzing resources
             const mixedContent = await page.evaluate(() => {
                 const issues = [];
-
-                // Check all loaded resources
                 performance.getEntriesByType('resource').forEach(entry => {
-                    if (entry.name.startsWith('http://')) {
-                        issues.push({
-                            url: entry.name,
-                            type: entry.initiatorType,
-                            blocked: false
-                        });
-                    }
+                    if (entry.name.startsWith('http://')) issues.push({ url: entry.name, type: entry.initiatorType });
                 });
-
-                // Check scripts
-                document.querySelectorAll('script[src]').forEach(script => {
-                    if (script.src.startsWith('http://')) {
-                        issues.push({
-                            url: script.src,
-                            type: 'script',
-                            blocked: true  // Mixed scripts are usually blocked
-                        });
-                    }
-                });
-
-                // Check stylesheets
-                document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-                    if (link.href.startsWith('http://')) {
-                        issues.push({
-                            url: link.href,
-                            type: 'stylesheet',
-                            blocked: false
-                        });
-                    }
-                });
-
-                // Check images
-                document.querySelectorAll('img[src]').forEach(img => {
-                    if (img.src.startsWith('http://')) {
-                        issues.push({
-                            url: img.src,
-                            type: 'image',
-                            blocked: false
-                        });
-                    }
-                });
-
                 return issues;
             });
 
             if (mixedContent.length === 0) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: '✅ No mixed content detected.\n\nAll resources are loaded over HTTPS.'
-                    }]
-                };
+                return { content: [{ type: 'text', text: '✅ No mixed content detected.' }] };
             }
-
-            const summary = {
-                total: mixedContent.length,
-                blocked: mixedContent.filter(i => i.blocked).length,
-                issues: mixedContent.slice(0, 20)
-            };
 
             return {
                 content: [{
                     type: 'text',
-                    text: `⚠️ Mixed Content Detected:\n\n${JSON.stringify(summary, null, 2)}\n\nNote: Showing first 20 issues. Mixed content can be a security risk.`
+                    text: `⚠️ Mixed Content Detected: ${JSON.stringify(mixedContent.slice(0, 20), null, 2)}`
                 }]
             };
         } catch (error) {
-            debugLog(`Error in browser_sec_detect_mixed_content: ${error.message}`);
             return {
-                content: [{
-                    type: 'text',
-                    text: `❌ Error: ${error.message}`
-                }],
+                content: [{ type: 'text', text: `❌ Error: ${error.message}` }],
                 isError: true
             };
         }
-    },
+    }),
 
-    browser_sec_start_csp_monitoring: async (args) => {
+    browser_sec_start_csp_monitoring: async () => {
         try {
-            if (cspMonitoringActive) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: '⚠️ CSP monitoring is already active.\n\nUse browser_sec_get_csp_violations to view violations or browser_sec_stop_csp_monitoring to stop.'
-                    }]
-                };
-            }
+            if (cspMonitoringActive) return { content: [{ type: 'text', text: '⚠️ CSP monitoring already active.' }] };
 
             const cdp = await getCDPSession();
             cspViolations = [];
-
-            // Enable Log domain to capture CSP violations
             await cdp.send('Log.enable');
-
-            // Listen for log entries
             cdp.on('Log.entryAdded', (params) => {
                 const entry = params.entry;
-
-                // CSP violations appear as console errors with specific text
-                if (entry.source === 'security' ||
-                    (entry.text && entry.text.includes('Content Security Policy')) ||
-                    (entry.text && entry.text.includes('CSP'))) {
-
+                if (entry.source === 'security' || entry.text?.includes('CSP')) {
                     cspViolations.push({
                         timestamp: new Date(entry.timestamp).toISOString(),
                         text: entry.text,
-                        level: entry.level,
-                        source: entry.source,
-                        url: entry.url,
-                        lineNumber: entry.lineNumber
+                        url: entry.url
                     });
                 }
             });
 
             cspMonitoringActive = true;
-
-            debugLog('Started CSP violation monitoring');
-
-            return {
-                content: [{
-                    type: 'text',
-                    text: '✅ CSP violation monitoring started\n\nCapturing Content Security Policy violations...\n\nUse browser_sec_get_csp_violations to view captured violations.'
-                }]
-            };
+            return { content: [{ type: 'text', text: '✅ CSP monitoring started.' }] };
         } catch (error) {
-            debugLog(`CDP error in browser_sec_start_csp_monitoring: ${error.message}`);
             return {
-                content: [{
-                    type: 'text',
-                    text: `❌ CDP Error: ${error.message}\n\nPossible causes:\n- CDP session disconnected\n- Log domain not supported`
-                }],
+                content: [{ type: 'text', text: `❌ CDP Error: ${error.message}` }],
                 isError: true
             };
         }
     },
 
-    browser_sec_get_csp_violations: async (args) => {
-        try {
-            if (!cspMonitoringActive) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: '⚠️ CSP monitoring is not active.\n\nUse browser_sec_start_csp_monitoring to start monitoring first.'
-                    }]
-                };
-            }
+    browser_sec_get_csp_violations: async () => {
+        if (!cspMonitoringActive) return { content: [{ type: 'text', text: '⚠️ CSP monitoring not active.' }] };
+        if (cspViolations.length === 0) return { content: [{ type: 'text', text: 'No CSP violations detected.' }] };
 
-            if (cspViolations.length === 0) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: 'No CSP violations detected yet.\n\nMonitoring is active - violations will appear if any occur.'
-                    }]
-                };
-            }
-
-            const summary = {
-                total: cspViolations.length,
-                violations: cspViolations.map(v => ({
-                    timestamp: v.timestamp,
-                    message: v.text,
-                    level: v.level,
-                    source: v.url || 'unknown'
-                }))
-            };
-
-            return {
-                content: [{
-                    type: 'text',
-                    text: `⚠️ CSP Violations (${cspViolations.length}):\n\n${JSON.stringify(summary, null, 2)}`
-                }]
-            };
-        } catch (error) {
-            debugLog(`Error in browser_sec_get_csp_violations: ${error.message}`);
-            return {
-                content: [{
-                    type: 'text',
-                    text: `❌ Error: ${error.message}`
-                }],
-                isError: true
-            };
-        }
+        return {
+            content: [{
+                type: 'text',
+                text: `⚠️ CSP Violations: ${JSON.stringify(cspViolations, null, 2)}`
+            }]
+        };
     },
 
-    browser_sec_stop_csp_monitoring: async (args) => {
-        try {
-            if (!cspMonitoringActive) {
-                return {
-                    content: [{
-                        type: 'text',
-                        text: '⚠️ CSP monitoring is not active.'
-                    }]
-                };
-            }
+    browser_sec_stop_csp_monitoring: async () => {
+        if (!cspMonitoringActive) return { content: [{ type: 'text', text: '⚠️ CSP monitoring not active.' }] };
 
-            const cdp = await getCDPSession();
-            await cdp.send('Log.disable');
+        const cdp = await getCDPSession();
+        await cdp.send('Log.disable');
+        cdp.removeAllListeners('Log.entryAdded');
+        cspViolations = [];
+        cspMonitoringActive = false;
 
-            // Remove listener
-            cdp.removeAllListeners('Log.entryAdded');
-
-            const count = cspViolations.length;
-            cspViolations = [];
-            cspMonitoringActive = false;
-
-            debugLog('Stopped CSP violation monitoring');
-
-            return {
-                content: [{
-                    type: 'text',
-                    text: `✅ CSP monitoring stopped\n\nCaptured ${count} violations.\nData has been cleared.`
-                }]
-            };
-        } catch (error) {
-            cspMonitoringActive = false;
-            debugLog(`CDP error in browser_sec_stop_csp_monitoring: ${error.message}`);
-            return {
-                content: [{
-                    type: 'text',
-                    text: `❌ CDP Error: ${error.message}\n\nMonitoring has been stopped.`
-                }],
-                isError: true
-            };
-        }
+        return { content: [{ type: 'text', text: '✅ CSP monitoring stopped.' }] };
     }
 };
 

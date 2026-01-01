@@ -1,4 +1,4 @@
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 
 const definitions = [
     {
@@ -63,13 +63,11 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_mouse_move: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_mouse_move: withPage(async (page, args) => {
         await page.mouse.move(args.x, args.y);
         return { content: [{ type: 'text', text: `Moved mouse to ${args.x}, ${args.y}` }] };
-    },
-    browser_mouse_click: async (args) => {
-        const { page } = await connectToBrowser();
+    }),
+    browser_mouse_click: withPage(async (page, args) => {
         if (args.x !== undefined && args.y !== undefined) {
             await page.mouse.click(args.x, args.y, {
                 button: args.button || 'left',
@@ -77,28 +75,24 @@ const handlers = {
             });
             return { content: [{ type: 'text', text: `Clicked at ${args.x}, ${args.y}` }] };
         } else {
-            // Click at current position
-            // Note: page.mouse.click() without coords clicks at current position
             await page.mouse.click(undefined, undefined, {
                 button: args.button || 'left',
                 clickCount: args.clickCount || 1
             });
             return { content: [{ type: 'text', text: `Clicked at current mouse position` }] };
         }
-    },
-    browser_mouse_drag: async (args) => {
-        const { page } = await connectToBrowser();
+    }),
+    browser_mouse_drag: withPage(async (page, args) => {
         await page.mouse.move(args.fromX, args.fromY);
         await page.mouse.down();
         await page.mouse.move(args.toX, args.toY);
         await page.mouse.up();
         return { content: [{ type: 'text', text: `Dragged from ${args.fromX},${args.fromY} to ${args.toX},${args.toY}` }] };
-    },
-    browser_mouse_wheel: async (args) => {
-        const { page } = await connectToBrowser();
+    }),
+    browser_mouse_wheel: withPage(async (page, args) => {
         await page.mouse.wheel(args.deltaX, args.deltaY);
         return { content: [{ type: 'text', text: `Scrolled wheel by ${args.deltaX}, ${args.deltaY}` }] };
-    }
+    })
 };
 
 module.exports = { definitions, handlers };

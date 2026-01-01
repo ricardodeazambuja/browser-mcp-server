@@ -1,4 +1,4 @@
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 
 const coreDefinitions = [
     {
@@ -29,8 +29,7 @@ const coreDefinitions = [
 ];
 
 const coreHandlers = {
-    browser_screenshot: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_screenshot: withPage(async (page, args) => {
         const screenshot = await page.screenshot({
             fullPage: args.fullPage || false,
             type: 'png'
@@ -42,10 +41,9 @@ const coreHandlers = {
                 mimeType: 'image/png'
             }]
         };
-    },
+    }),
 
-    browser_evaluate: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_evaluate: withPage(async (page, args) => {
         const result = await page.evaluate(args.code);
         return {
             content: [{
@@ -53,7 +51,7 @@ const coreHandlers = {
                 text: JSON.stringify(result, null, 2)
             }]
         };
-    }
+    })
 };
 
 const optionalDefinitions = [
@@ -95,14 +93,12 @@ const optionalDefinitions = [
 ];
 
 const optionalHandlers = {
-    browser_get_text: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_get_text: withPage(async (page, args) => {
         const text = await page.textContent(args.selector);
         return { content: [{ type: 'text', text }] };
-    },
+    }),
 
-    browser_get_dom: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_get_dom: withPage(async (page, args) => {
         const domContent = await page.evaluate((sel) => {
             const element = sel ? document.querySelector(sel) : document.documentElement;
             if (!element) return null;
@@ -122,10 +118,9 @@ const optionalHandlers = {
                 text: JSON.stringify(domContent, null, 2)
             }]
         };
-    },
+    }),
 
-    browser_read_page: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_read_page: withPage(async (page) => {
         const metadata = {
             title: await page.title(),
             url: page.url(),
@@ -138,7 +133,7 @@ const optionalHandlers = {
                 text: JSON.stringify(metadata, null, 2)
             }]
         };
-    }
+    })
 };
 
 module.exports = {

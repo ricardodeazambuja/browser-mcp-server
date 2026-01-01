@@ -1,4 +1,4 @@
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 
 const definitions = [
     {
@@ -17,11 +17,10 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_press_key: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_press_key: withPage(async (page, args) => {
         await page.keyboard.press(args.key);
         return { content: [{ type: 'text', text: `Pressed key: ${args.key}` }] };
-    }
+    })
 };
 
 module.exports = { definitions, handlers };

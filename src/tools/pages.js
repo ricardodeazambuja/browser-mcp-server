@@ -1,4 +1,4 @@
-const { connectToBrowser, setActivePageIndex, getBrowserState } = require('../browser');
+const { connectToBrowser, setActivePageIndex, getBrowserState, withPage } = require('../browser');
 
 const definitions = [
     {
@@ -51,23 +51,18 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_list_pages: async (args) => {
-        const { context, activePageIndex } = getBrowserState();
-        // Ensure we have a context, connect if needed
-        if (!context) await connectToBrowser();
-
-        // We need fresh state after connect
+    browser_list_pages: async () => {
+        const { context } = await connectToBrowser();
+        const pages = context.pages();
         const state = getBrowserState();
-        const pages = state.context.pages();
 
         const pageList = pages.map((p, i) => ({
             index: i,
-            title: 'Unknown', // Will update below
+            title: 'Unknown',
             url: p.url(),
             isActive: i === state.activePageIndex
         }));
 
-        // Try to get titles (async)
         await Promise.all(pages.map(async (p, i) => {
             try {
                 pageList[i].title = await p.title();
@@ -108,7 +103,6 @@ const handlers = {
         }
         setActivePageIndex(args.index);
 
-        // Just for visual effect in non-headless mode, brought to front
         try {
             await allPages[args.index].bringToFront();
         } catch (e) { }
@@ -122,7 +116,7 @@ const handlers = {
     },
 
     browser_close_page: async (args) => {
-        const { context, activePageIndex } = await connectToBrowser(); // connects and gets state
+        const { context, activePageIndex } = await connectToBrowser();
         const targetPages = context.pages();
         const closeIdx = args.index !== undefined ? args.index : activePageIndex;
 
@@ -132,7 +126,6 @@ const handlers = {
 
         await targetPages[closeIdx].close();
 
-        // Adjust active index if needed
         if (activePageIndex >= context.pages().length) {
             setActivePageIndex(Math.max(0, context.pages().length - 1));
         }

@@ -1593,11 +1593,16 @@ const toolToModule = {
     browser_get_media_summary: 'media',
     browser_get_audio_analysis: 'media',
     browser_control_media: 'media',
+    // Tabs
+    browser_list_pages: 'tabs',
+    browser_new_page: 'tabs',
+    browser_switch_page: 'tabs',
+    browser_close_page: 'tabs',
+    // Extraction
+    browser_get_text: 'extraction',
+    browser_get_dom: 'extraction',
+    browser_read_page: 'extraction',
     // Advanced
-    browser_list_pages: 'advanced',
-    browser_new_page: 'advanced',
-    browser_switch_page: 'advanced',
-    browser_close_page: 'advanced',
     browser_console_start: 'advanced',
     browser_console_get: 'advanced',
     browser_console_clear: 'advanced',
@@ -1607,19 +1612,16 @@ const toolToModule = {
     browser_wait_for_selector: 'advanced',
     browser_start_video_recording: 'advanced',
     browser_stop_video_recording: 'advanced',
+    browser_mouse_move: 'advanced',
+    browser_mouse_click: 'advanced',
+    browser_mouse_drag: 'advanced',
+    browser_mouse_wheel: 'advanced',
+    browser_press_key: 'advanced',
     // Extra core (optional versions)
     browser_reload: 'advanced',
     browser_go_back: 'advanced',
     browser_go_forward: 'advanced',
-    browser_get_text: 'advanced',
-    browser_get_dom: 'advanced',
-    browser_read_page: 'advanced',
-    browser_click: 'advanced',
-    browser_type: 'advanced',
-    browser_hover: 'advanced',
-    browser_focus: 'advanced',
-    browser_select: 'advanced',
-    browser_scroll: 'advanced'
+    browser_select: 'advanced'
 };
 
 const coreDefinitions = definitions;

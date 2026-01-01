@@ -168,7 +168,7 @@ const steps = [
             if (res.result.isError) {
                 throw new Error('Stop CPU profiling failed: ' + text);
             }
-            if (!text.includes('totalNodes') && !text.includes('not active')) {
+            if (!text.includes('durationMs') && !text.includes('not active')) {
                 throw new Error('Unexpected response: ' + text.substring(0, 100));
             }
         }
@@ -185,7 +185,7 @@ const steps = [
             if (res.result.isError) {
                 throw new Error('Get heap usage failed: ' + text);
             }
-            if (!text.includes('usedSize')) {
+            if (!text.includes('usedSizeMB')) {
                 throw new Error('Unexpected response: ' + text.substring(0, 100));
             }
         }
@@ -202,7 +202,8 @@ const steps = [
             if (res.result.isError) {
                 throw new Error('Get runtime metrics failed: ' + text);
             }
-            if (!text.includes('Nodes') && !text.includes('JSHeap')) {
+            // Metrics is an array of {name, value}
+            if (!text.includes('name') && !text.includes('value')) {
                 throw new Error('Unexpected response: ' + text.substring(0, 100));
             }
         }
@@ -262,7 +263,7 @@ const steps = [
             if (res.result.isError) {
                 throw new Error('Stop code coverage failed: ' + text);
             }
-            if (!text.includes('javascript') && !text.includes('not active')) {
+            if (!text.includes('jsFiles') && !text.includes('not active')) {
                 throw new Error('Unexpected response: ' + text.substring(0, 100));
             }
         }

@@ -1,4 +1,4 @@
-const { connectToBrowser } = require('../browser');
+const { withPage } = require('../browser');
 
 const coreDefinitions = [
     {
@@ -17,11 +17,10 @@ const coreDefinitions = [
 ];
 
 const coreHandlers = {
-    browser_navigate: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_navigate: withPage(async (page, args) => {
         await page.goto(args.url, { waitUntil: 'domcontentloaded' });
         return { content: [{ type: 'text', text: `Navigated to ${args.url}` }] };
-    }
+    })
 };
 
 const optionalDefinitions = [
@@ -58,21 +57,18 @@ const optionalDefinitions = [
 ];
 
 const optionalHandlers = {
-    browser_reload: async (args) => {
-        const { page } = await connectToBrowser();
+    browser_reload: withPage(async (page) => {
         await page.reload({ waitUntil: 'domcontentloaded' });
-        return { content: [{ type: 'text', text: `Reloaded page` }] };
-    },
-    browser_go_back: async (args) => {
-        const { page } = await connectToBrowser();
+        return { content: [{ type: 'text', text: 'Reloaded page' }] };
+    }),
+    browser_go_back: withPage(async (page) => {
         await page.goBack({ waitUntil: 'domcontentloaded' });
-        return { content: [{ type: 'text', text: `Navigated back` }] };
-    },
-    browser_go_forward: async (args) => {
-        const { page } = await connectToBrowser();
+        return { content: [{ type: 'text', text: 'Navigated back' }] };
+    }),
+    browser_go_forward: withPage(async (page) => {
         await page.goForward({ waitUntil: 'domcontentloaded' });
-        return { content: [{ type: 'text', text: `Navigated forward` }] };
-    }
+        return { content: [{ type: 'text', text: 'Navigated forward' }] };
+    })
 };
 
 module.exports = {

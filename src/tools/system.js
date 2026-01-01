@@ -1,11 +1,11 @@
 const os = require('os');
-const { connectToBrowser, getBrowserState } = require('../browser');
+const { connectToBrowser, getBrowserState, withPage } = require('../browser');
 const { getPlaywrightPath } = require('../utils');
 
 const definitions = [
     {
         name: 'browser_health_check',
-        description: 'Check if the browser is running and accessible on port 9222 (see browser_docs)',
+        description: 'Check browser accessibility on port 9222 (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -28,12 +28,12 @@ const definitions = [
     },
     {
         name: 'browser_resize_window',
-        description: 'Resize the browser window (useful for testing responsiveness) (see browser_docs)',
+        description: 'Resize browser window (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
-                width: { type: 'number', description: 'Window width in pixels' },
-                height: { type: 'number', description: 'Window height in pixels' }
+                width: { type: 'number', description: 'Width in pixels' },
+                height: { type: 'number', description: 'Height in pixels' }
             },
             required: ['width', 'height'],
             additionalProperties: false,
@@ -42,12 +42,12 @@ const definitions = [
     },
     {
         name: 'browser_wait_for_selector',
-        description: 'Wait for an element to appear on the page (see browser_docs)',
+        description: 'Wait for an element to appear (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
-                selector: { type: 'string', description: 'Playwright selector to wait for' },
-                timeout: { type: 'number', description: 'Timeout in milliseconds', default: 30000 }
+                selector: { type: 'string', description: 'Selector to wait for' },
+                timeout: { type: 'number', description: 'Timeout in ms', default: 30000 }
             },
             required: ['selector'],
             additionalProperties: false,
@@ -56,11 +56,11 @@ const definitions = [
     },
     {
         name: 'browser_start_video_recording',
-        description: 'Start recording browser session as video (see browser_docs)',
+        description: 'Start recording session trace (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
-                path: { type: 'string', description: 'Path to save the video file' }
+                path: { type: 'string', description: 'Optional save path' }
             },
             additionalProperties: false,
             $schema: 'http://json-schema.org/draft-07/schema#'
@@ -68,7 +68,7 @@ const definitions = [
     },
     {
         name: 'browser_stop_video_recording',
-        description: 'Stop video recording and save the file (see browser_docs)',
+        description: 'Stop recording and save trace (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {},
@@ -79,45 +79,18 @@ const definitions = [
 ];
 
 const handlers = {
-    browser_health_check: async (args) => {
-        // connectToBrowser called inside executeTool usually, but here we check state
-        const { browser, page } = getBrowserState();
-
-        // We try to connect if not connected
-        if (!browser) {
-            // If getting here via executeTool, connectToBrowser was already called
-            // If somehow not, we call it
-            await connectToBrowser();
-        }
-
+    browser_health_check: async () => {
+        const { browser } = await connectToBrowser();
         const state = getBrowserState();
         const url = state.page ? await state.page.url() : 'Unknown';
-
-        const isConnected = state.browser && state.browser.isConnected && state.browser.isConnected();
-        const mode = isConnected ? 'Connected to existing Chrome (Antigravity)' : 'Launched standalone Chrome';
-
-        // Determine profile path based on mode
-        let browserProfile;
-        if (isConnected) {
-            browserProfile = `${process.env.HOME}/.gemini/antigravity-browser-profile`;
-        } else {
-            browserProfile = process.env.MCP_BROWSER_PROFILE || `${os.tmpdir()}/chrome-mcp-profile`;
-        }
-
-        // Get dynamic tool count (loaded at runtime to avoid circular dependency)
+        const isConnected = browser && browser.isConnected && browser.isConnected();
+        const mode = isConnected ? 'Antigravity Mode' : 'Standalone Mode';
+        
         const { tools } = require('./index');
-        const toolCount = tools.length;
-
         return {
             content: [{
                 type: 'text',
-                text: `✅ Browser automation is fully functional!\n\n` +
-                    `Mode: ${mode}\n` +
-                    `✅ Playwright: ${getPlaywrightPath() || 'loaded'}\n` +
-                    `✅ Chrome: Port 9222\n` +
-                    `✅ Profile: ${browserProfile}\n` +
-                    `✅ Current page: ${url}\n\n` +
-                    `All ${toolCount} browser tools are ready to use!`
+                text: `✅ Browser automation functional (${mode})\n✅ Port: 9222\n✅ Page: ${url}\n✅ Tools: ${tools.length} available`
             }]
         };
     },
@@ -127,69 +100,27 @@ const handlers = {
         return { content: [{ type: 'text', text: `Waited for ${args.ms}ms` }] };
     },
 
-    browser_resize_window: async (args) => {
-        const { page } = await connectToBrowser();
-        await page.setViewportSize({
-            width: args.width,
-            height: args.height
-        });
-        return {
-            content: [{
-                type: 'text',
-                text: `Resized window to ${args.width}x${args.height}`
-            }]
-        };
-    },
+    browser_resize_window: withPage(async (page, args) => {
+        await page.setViewportSize({ width: args.width, height: args.height });
+        return { content: [{ type: 'text', text: `Resized to ${args.width}x${args.height}` }] };
+    }),
 
-    browser_wait_for_selector: async (args) => {
-        const { page } = await connectToBrowser();
-        await page.waitForSelector(args.selector, {
-            timeout: args.timeout || 30000
-        });
-        return {
-            content: [{
-                type: 'text',
-                text: `Element ${args.selector} appeared`
-            }]
-        };
-    },
+    browser_wait_for_selector: withPage(async (page, args) => {
+        await page.waitForSelector(args.selector, { timeout: args.timeout || 30000 });
+        return { content: [{ type: 'text', text: `Element ${args.selector} appeared` }] };
+    }),
 
-    browser_start_video_recording: async (args) => {
+    browser_start_video_recording: async () => {
         const { context } = await connectToBrowser();
-        const videoPath = args.path || `${os.tmpdir()}/browser-recording-${Date.now()}.webm`;
-        await context.tracing.start({
-            screenshots: true,
-            snapshots: true
-        });
-        // Start video recording using Playwright's video feature
-        if (!context._options || !context._options.recordVideo) {
-            // Note: Video recording needs to be set when creating context
-            // For existing context, we'll use screenshots as fallback
-            return {
-                content: [{
-                    type: 'text',
-                    text: 'Started session tracing (screenshots). For full video, context needs recordVideo option at creation.'
-                }]
-            };
-        }
-        return {
-            content: [{
-                type: 'text',
-                text: `Started video recording to ${videoPath}`
-            }]
-        };
+        await context.tracing.start({ screenshots: true, snapshots: true });
+        return { content: [{ type: 'text', text: 'Started session tracing (screenshots).' }] };
     },
 
-    browser_stop_video_recording: async (args) => {
+    browser_stop_video_recording: async () => {
         const { context } = await connectToBrowser();
         const tracePath = `${os.tmpdir()}/trace-${Date.now()}.zip`;
         await context.tracing.stop({ path: tracePath });
-        return {
-            content: [{
-                type: 'text',
-                text: `Stopped recording. Trace saved to ${tracePath}. Use 'playwright show-trace ${tracePath}' to view.`
-            }]
-        };
+        return { content: [{ type: 'text', text: `Trace saved to ${tracePath}` }] };
     }
 };
 

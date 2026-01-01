@@ -1,56 +1,20 @@
 const fs = require('fs');
 const path = require('path');
+const { MODULE_MAPPING, MODULE_DESCRIPTIONS } = require('../utils');
 
-// State
 let tools = [];
 const handlers = {};
 const activeModules = new Set();
 let notifyCallback = null;
 
-const MODULE_MAPPING = {
-    'network': ['network'],
-    'performance': ['performance'],
-    'security': ['security'],
-    'storage': ['storage'],
-    'media': ['media'],
-    'advanced': [
-        'mouse', 
-        'keyboard', 
-        'pages', 
-        'console', 
-        'system',
-        // Optional parts of core modules
-        'navigation_opt',
-        'interaction_opt',
-        'info_opt'
-    ]
-};
-
-const MODULE_DESCRIPTIONS = {
-    'network': 'Network monitoring, HAR export, WebSocket inspection, throttling',
-    'performance': 'CPU profiling, memory snapshots, runtime metrics, web vitals',
-    'security': 'Security headers, TLS/SSL info, CSP monitoring, mixed content detection',
-    'storage': 'IndexedDB, Cache Storage, Service Workers management',
-    'media': 'Audio/Video element inspection, spectral analysis, playback control',
-    'advanced': 'Low-level mouse/keyboard, multi-tab management, console logs, system info'
-};
-
-/**
- * Register a callback to be notified when tool list changes
- */
 function setNotificationCallback(callback) {
     notifyCallback = callback;
 }
 
-/**
- * Rebuild the tools array and handlers object based on active modules
- */
 function updateRegistry() {
-    // Clear current state
     tools.length = 0;
     for (const key in handlers) delete handlers[key];
 
-    // 1. Load Core (Minimalist 6)
     const coreModules = [
         { name: 'navigation', file: 'navigation.js' },
         { name: 'interaction', file: 'interaction.js' },
@@ -64,7 +28,6 @@ function updateRegistry() {
         if (mod.coreHandlers) Object.assign(handlers, mod.coreHandlers);
     });
 
-    // 2. Add browser_manage_modules (The 6th core tool)
     tools.push({
         name: 'browser_manage_modules',
         description: 'List, load, or unload power-user modules (see browser_docs)',
@@ -104,27 +67,23 @@ function updateRegistry() {
             };
         }
 
-        if (!moduleName) throw new Error('Module name is required for load/unload actions');
+        if (!moduleName) throw new Error('Module name is required');
         if (!MODULE_MAPPING[moduleName]) throw new Error(`Unknown module: ${moduleName}`);
 
         if (action === 'load') {
-            if (activeModules.has(moduleName)) {
-                return { content: [{ type: 'text', text: `ℹ️ Module '${moduleName}' is already loaded.` }] };
-            }
+            if (activeModules.has(moduleName)) return { content: [{ type: 'text', text: `ℹ️ Module '${moduleName}' already loaded.` }] };
             activeModules.add(moduleName);
             updateRegistry();
             if (notifyCallback) notifyCallback();
-            return { content: [{ type: 'text', text: `✅ Module '${moduleName}' loaded successfully. New tools are now available.` }] };
+            return { content: [{ type: 'text', text: `✅ Module '${moduleName}' loaded.` }] };
         }
 
         if (action === 'unload') {
-            if (!activeModules.has(moduleName)) {
-                return { content: [{ type: 'text', text: `ℹ️ Module '${moduleName}' is not loaded.` }] };
-            }
+            if (!activeModules.has(moduleName)) return { content: [{ type: 'text', text: `ℹ️ Module '${moduleName}' not loaded.` }] };
             activeModules.delete(moduleName);
             updateRegistry();
             if (notifyCallback) notifyCallback();
-            return { content: [{ type: 'text', text: `✅ Module '${moduleName}' unloaded successfully. Tools have been removed.` }] };
+            return { content: [{ type: 'text', text: `✅ Module '${moduleName}' unloaded.` }] };
         }
     };
 
