@@ -108,30 +108,6 @@ Example:
   browser_action({ action: 'scroll', y: 500 })
 `,
 
-    browser_click: `
-📖 browser_click(selector) [DEPRECATED]
-
-⚠️ Please use browser_action({ action: 'click', selector: '...' }) instead.
-`,
-
-    browser_type: `
-📖 browser_type(selector, text) [DEPRECATED]
-
-⚠️ Please use browser_action({ action: 'type', selector: '...', text: '...' }) instead.
-`,
-
-    browser_hover: `
-📖 browser_hover(selector) [DEPRECATED]
-
-⚠️ Please use browser_action({ action: 'hover', selector: '...' }) instead.
-`,
-
-    browser_focus: `
-📖 browser_focus(selector) [DEPRECATED]
-
-⚠️ Please use browser_action({ action: 'focus', selector: '...' }) instead.
-`,
-
     browser_select: `
 📖 browser_select(selector, values)
 
@@ -146,12 +122,6 @@ Returns:
 
 Example:
   browser_select({ selector: '#country', values: ['US'] })
-`,
-
-    browser_scroll: `
-📖 browser_scroll(x?, y?) [DEPRECATED]
-
-⚠️ Please use browser_action({ action: 'scroll', x: ..., y: ... }) instead.
 `,
 
     // Mouse & Keyboard
@@ -1604,7 +1574,7 @@ const toolToModule = {
     browser_mouse_drag: 'advanced',
     browser_mouse_wheel: 'advanced',
     browser_press_key: 'advanced',
-    // Extra core (optional versions)
+    // Optional core
     browser_reload: 'advanced',
     browser_go_back: 'advanced',
     browser_go_forward: 'advanced',
