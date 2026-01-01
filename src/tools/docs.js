@@ -87,77 +87,49 @@ Example:
 `,
 
     // Interaction
-    browser_click: `
-📖 browser_click(selector)
+    browser_action: `
+📖 browser_action(action, selector?, text?, x?, y?)
 
-Click an element using a Playwright selector.
+Perform interaction actions like click, type, hover, scroll, and focus.
 
 Parameters:
-  • selector (string, required) - Playwright selector for the element
-
-Selector Syntax:
-  • CSS: '#id', '.class', 'button.primary'
-  • Text: 'text=Click me', 'text="exact match"'
-  • Data attributes: '[data-testid="submit"]'
-  • Chaining: 'div.container >> button'
+  • action (string, required) - "click", "type", "hover", "scroll", or "focus"
+  • selector (string, optional) - Playwright selector for the element
+  • text (string, optional) - Text to type (required for "type" action)
+  • x (number, optional) - Horizontal scroll position (for "scroll")
+  • y (number, optional) - Vertical scroll position (for "scroll")
 
 Returns:
-  { content: [{ type: 'text', text: 'Clicked <selector>' }] }
+  { content: [{ type: 'text', text: 'Action <action> performed...' }] }
 
 Example:
-  browser_click({ selector: 'button.submit' })
-  browser_click({ selector: 'text=Login' })
+  browser_action({ action: 'click', selector: 'button.submit' })
+  browser_action({ action: 'type', selector: '#search', text: 'MCP servers' })
+  browser_action({ action: 'scroll', y: 500 })
+`,
+
+    browser_click: `
+📖 browser_click(selector) [DEPRECATED]
+
+⚠️ Please use browser_action({ action: 'click', selector: '...' }) instead.
 `,
 
     browser_type: `
-📖 browser_type(selector, text)
+📖 browser_type(selector, text) [DEPRECATED]
 
-Type text into an input field.
-
-Parameters:
-  • selector (string, required) - Playwright selector for the input
-  • text (string, required) - Text to type
-
-Returns:
-  { content: [{ type: 'text', text: 'Typed into <selector>' }] }
-
-⚠️ Important:
-  • Uses page.fill() which CLEARS the field first, then types
-  • Does NOT append to existing text
-  • For appending, use browser_evaluate to set element.value
-
-Example:
-  browser_type({ selector: '#username', text: 'john@example.com' })
+⚠️ Please use browser_action({ action: 'type', selector: '...', text: '...' }) instead.
 `,
 
     browser_hover: `
-📖 browser_hover(selector)
+📖 browser_hover(selector) [DEPRECATED]
 
-Hover over an element.
-
-Parameters:
-  • selector (string, required) - Playwright selector for the element
-
-Returns:
-  { content: [{ type: 'text', text: 'Hovered over <selector>' }] }
-
-Example:
-  browser_hover({ selector: '.menu-item' })
+⚠️ Please use browser_action({ action: 'hover', selector: '...' }) instead.
 `,
 
     browser_focus: `
-📖 browser_focus(selector)
+📖 browser_focus(selector) [DEPRECATED]
 
-Focus an element.
-
-Parameters:
-  • selector (string, required) - Playwright selector for the element
-
-Returns:
-  { content: [{ type: 'text', text: 'Focused <selector>' }] }
-
-Example:
-  browser_focus({ selector: 'input[name="email"]' })
+⚠️ Please use browser_action({ action: 'focus', selector: '...' }) instead.
 `,
 
     browser_select: `
@@ -174,24 +146,12 @@ Returns:
 
 Example:
   browser_select({ selector: '#country', values: ['US'] })
-  browser_select({ selector: '#colors', values: ['red', 'blue'] })
 `,
 
     browser_scroll: `
-📖 browser_scroll(x?, y?)
+📖 browser_scroll(x?, y?) [DEPRECATED]
 
-Scroll the page to specific coordinates.
-
-Parameters:
-  • x (number, optional) - Horizontal scroll position (default: 0)
-  • y (number, optional) - Vertical scroll position (default: 0)
-
-Returns:
-  { content: [{ type: 'text', text: 'Scrolled to (x, y)' }] }
-
-Example:
-  browser_scroll({ y: 1000 })  // Scroll down 1000px
-  browser_scroll({ x: 500, y: 800 })
+⚠️ Please use browser_action({ action: 'scroll', x: ..., y: ... }) instead.
 `,
 
     // Mouse & Keyboard
@@ -1555,6 +1515,33 @@ Returns:
 
 Example:
   browser_storage_unregister_service_worker({ scopeURL: 'https://example.com/' })
+`,
+
+    browser_manage_modules: `
+📖 browser_manage_modules(action, module?)
+
+List, load, or unload power-user modules to save tokens.
+
+Parameters:
+  • action (string, required) - "list", "load", or "unload"
+  • module (string, optional) - Name of the module (required for "load" and "unload")
+
+Modules available:
+  • network - Network monitoring and HAR export
+  • performance - CPU profiling and metrics
+  • security - Security headers and CSP monitoring
+  • storage - IndexedDB and Cache Storage
+  • media - Audio/Video inspection and control
+  • tabs - Multi-tab management
+  • extraction - Advanced DOM extraction
+  • advanced - Low-level interaction and system info
+
+Returns:
+  { content: [{ type: 'text', text: 'Module <name> <status>...' }] }
+
+Example:
+  browser_manage_modules({ action: 'list' })
+  browser_manage_modules({ action: 'load', module: 'network' })
 `
 };
 
