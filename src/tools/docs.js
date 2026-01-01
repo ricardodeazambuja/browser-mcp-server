@@ -1558,7 +1558,73 @@ Example:
 `
 };
 
-const handlers = {
+const toolToModule = {
+    // Network
+    browser_net_start_monitoring: 'network',
+    browser_net_get_requests: 'network',
+    browser_net_stop_monitoring: 'network',
+    browser_net_export_har: 'network',
+    browser_net_get_websocket_frames: 'network',
+    browser_net_set_request_blocking: 'network',
+    browser_net_emulate_conditions: 'network',
+    // Performance
+    browser_perf_start_profile: 'performance',
+    browser_perf_stop_profile: 'performance',
+    browser_perf_take_heap_snapshot: 'performance',
+    browser_perf_get_heap_usage: 'performance',
+    browser_perf_get_metrics: 'performance',
+    browser_perf_get_performance_metrics: 'performance',
+    browser_perf_start_coverage: 'performance',
+    browser_perf_stop_coverage: 'performance',
+    // Security
+    browser_sec_get_security_headers: 'security',
+    browser_sec_get_certificate_info: 'security',
+    browser_sec_detect_mixed_content: 'security',
+    browser_sec_start_csp_monitoring: 'security',
+    browser_sec_get_csp_violations: 'security',
+    browser_sec_stop_csp_monitoring: 'security',
+    // Storage
+    browser_storage_get_indexeddb: 'storage',
+    browser_storage_get_cache_storage: 'storage',
+    browser_storage_delete_cache: 'storage',
+    browser_storage_get_service_workers: 'storage',
+    browser_storage_unregister_service_worker: 'storage',
+    // Media
+    browser_get_media_summary: 'media',
+    browser_get_audio_analysis: 'media',
+    browser_control_media: 'media',
+    // Advanced
+    browser_list_pages: 'advanced',
+    browser_new_page: 'advanced',
+    browser_switch_page: 'advanced',
+    browser_close_page: 'advanced',
+    browser_console_start: 'advanced',
+    browser_console_get: 'advanced',
+    browser_console_clear: 'advanced',
+    browser_health_check: 'advanced',
+    browser_wait: 'advanced',
+    browser_resize_window: 'advanced',
+    browser_wait_for_selector: 'advanced',
+    browser_start_video_recording: 'advanced',
+    browser_stop_video_recording: 'advanced',
+    // Extra core (optional versions)
+    browser_reload: 'advanced',
+    browser_go_back: 'advanced',
+    browser_go_forward: 'advanced',
+    browser_get_text: 'advanced',
+    browser_get_dom: 'advanced',
+    browser_read_page: 'advanced',
+    browser_click: 'advanced',
+    browser_type: 'advanced',
+    browser_hover: 'advanced',
+    browser_focus: 'advanced',
+    browser_select: 'advanced',
+    browser_scroll: 'advanced'
+};
+
+const coreDefinitions = definitions;
+
+const coreHandlers = {
     browser_docs: async (args) => {
         const toolName = args.toolName;
 
@@ -1575,7 +1641,8 @@ Available tools:
 Usage:
   browser_docs({ toolName: 'browser_navigate' })
 
-Tip: Tool names use the prefix 'browser_' followed by the action.`
+Tip: Tool names use the prefix 'browser_' followed by the action.
+Note: Some tools require loading their respective module via browser_manage_modules.`
                 }]
             };
         }
@@ -1587,10 +1654,13 @@ Tip: Tool names use the prefix 'browser_' followed by the action.`
                 .filter(name => name.includes(toolName.replace('browser_', '')))
                 .slice(0, 5);
 
+            const moduleName = toolToModule[toolName];
+            const moduleInfo = moduleName ? `\n\n💡 This tool is part of the '${moduleName}' module. Load it first using:\nbrowser_manage_modules({ action: 'load', module: '${moduleName}' })` : '';
+
             return {
                 content: [{
                     type: 'text',
-                    text: `❌ No documentation found for '${toolName}'
+                    text: `❌ No documentation found for '${toolName}'${moduleInfo}
 
 ${suggestions.length > 0 ? `Did you mean:\n  • ${suggestions.join('\n  • ')}` : ''}
 
@@ -1608,4 +1678,10 @@ Use browser_docs({}) to see all available tools.`
     }
 };
 
-module.exports = { definitions, handlers };
+module.exports = { 
+    definitions, 
+    handlers: coreHandlers,
+    coreDefinitions,
+    coreHandlers,
+    toolToModule 
+};

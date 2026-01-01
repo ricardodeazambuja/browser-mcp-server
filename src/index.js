@@ -7,7 +7,7 @@
 
 const readline = require('readline');
 const { debugLog, version } = require('./utils');
-const { tools, handlers } = require('./tools');
+const { tools, handlers, setNotificationCallback } = require('./tools');
 const { getBrowserState } = require('./browser');
 
 class BrowserMCPServer {
@@ -16,6 +16,11 @@ class BrowserMCPServer {
             input: process.stdin,
             output: process.stdout,
             terminal: false
+        });
+
+        // Register callback for tool list changes
+        setNotificationCallback(() => {
+            this.notify('notifications/tools/list_changed');
         });
 
         this.init();
@@ -106,6 +111,13 @@ class BrowserMCPServer {
         if (error) response.error = error;
         else response.result = result;
         console.log(JSON.stringify(response));
+    }
+
+    notify(method, params = null) {
+        const notification = { jsonrpc: '2.0', method };
+        if (params) notification.params = params;
+        debugLog(`Sending notification: ${method}`);
+        console.log(JSON.stringify(notification));
     }
 
     async cleanup() {

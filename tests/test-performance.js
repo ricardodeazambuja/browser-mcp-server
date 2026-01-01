@@ -37,10 +37,18 @@ rl.on('line', (line) => {
     try {
         const response = JSON.parse(line);
         if (response.method === 'notifications/resources/list_changed') return;
+        if (response.method === 'notifications/tools/list_changed') return;
         if (response.error) {
             console.error('❌ Error:', response.error.message);
             process.exit(1);
         }
+        
+        // Check for application-level errors in the result content
+        if (response.result && response.result.content && response.result.content[0] && response.result.content[0].text && response.result.content[0].text.startsWith('❌')) {
+            console.error(`❌ Failed with app error: ${response.result.content[0].text}`);
+            process.exit(1);
+        }
+
         if (response.result && response.id) {
             handleResponse(response);
         }
@@ -83,6 +91,24 @@ const steps = [
             protocolVersion: '2024-11-05',
             capabilities: {},
             clientInfo: { name: 'performance-test', version: '1.0.0' }
+        }),
+        verify: () => { }
+    },
+    {
+        name: 'Load Performance Module',
+        method: 'tools/call',
+        params: () => ({
+            name: 'browser_manage_modules',
+            arguments: { action: 'load', module: 'performance' }
+        }),
+        verify: () => { }
+    },
+    {
+        name: 'Load Advanced Module',
+        method: 'tools/call',
+        params: () => ({
+            name: 'browser_manage_modules',
+            arguments: { action: 'load', module: 'advanced' }
         }),
         verify: () => { }
     },

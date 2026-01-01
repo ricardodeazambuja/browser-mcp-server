@@ -1,6 +1,6 @@
 const { connectToBrowser } = require('../browser');
 
-const definitions = [
+const coreDefinitions = [
     {
         name: 'browser_navigate',
         description: 'Navigate to a URL in the browser (see browser_docs)',
@@ -13,7 +13,18 @@ const definitions = [
             additionalProperties: false,
             $schema: 'http://json-schema.org/draft-07/schema#'
         }
-    },
+    }
+];
+
+const coreHandlers = {
+    browser_navigate: async (args) => {
+        const { page } = await connectToBrowser();
+        await page.goto(args.url, { waitUntil: 'domcontentloaded' });
+        return { content: [{ type: 'text', text: `Navigated to ${args.url}` }] };
+    }
+};
+
+const optionalDefinitions = [
     {
         name: 'browser_reload',
         description: 'Reload the current page (see browser_docs)',
@@ -46,12 +57,7 @@ const definitions = [
     }
 ];
 
-const handlers = {
-    browser_navigate: async (args) => {
-        const { page } = await connectToBrowser();
-        await page.goto(args.url, { waitUntil: 'domcontentloaded' });
-        return { content: [{ type: 'text', text: `Navigated to ${args.url}` }] };
-    },
+const optionalHandlers = {
     browser_reload: async (args) => {
         const { page } = await connectToBrowser();
         await page.reload({ waitUntil: 'domcontentloaded' });
@@ -69,4 +75,11 @@ const handlers = {
     }
 };
 
-module.exports = { definitions, handlers };
+module.exports = {
+    definitions: [...coreDefinitions, ...optionalDefinitions],
+    handlers: { ...coreHandlers, ...optionalHandlers },
+    coreDefinitions,
+    coreHandlers,
+    optionalDefinitions,
+    optionalHandlers
+};

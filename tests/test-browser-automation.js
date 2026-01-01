@@ -45,8 +45,9 @@ async function runTests() {
   const tests = [
     'Initialize',
     'List Tools',
+    'Load Advanced Module',
     'Health Check',
-    'Navigate to Example.com',
+    'Navigate to Local Page',
     'Evaluate JavaScript',
     'Take Screenshot',
     'Open New Page',
@@ -70,6 +71,14 @@ async function runTests() {
         return;
       }
 
+      // Check for application-level errors in the result content
+      if (response.result && response.result.content && response.result.content[0] && response.result.content[0].text && response.result.content[0].text.startsWith('❌')) {
+          console.log(`   ❌ ${currentTest} failed with app error: ${response.result.content[0].text}`);
+          proc.kill();
+          process.exit(1);
+          return;
+      }
+
       switch (response.id) {
         case 1: // Initialize
           console.log(`   ✅ ${currentTest}`);
@@ -80,13 +89,23 @@ async function runTests() {
         case 2: // Tools list
           console.log(`   ✅ ${currentTest} (${response.result.tools.length} tools)`);
           testStep++;
+          // Load advanced module for health check and others
+          setTimeout(() => sendRequest('tools/call', {
+            name: 'browser_manage_modules',
+            arguments: { action: 'load', module: 'advanced' }
+          }), 100);
+          break;
+
+        case 3: // Load module
+          console.log(`   ✅ ${currentTest}`);
+          testStep++;
           setTimeout(() => sendRequest('tools/call', {
             name: 'browser_health_check',
             arguments: {}
           }), 100);
           break;
 
-        case 3: // Health check
+        case 4: // Health check
           const healthText = response.result.content[0].text;
           const mode = healthText.includes('Launched standalone')
             ? 'Standalone Mode'
@@ -94,14 +113,15 @@ async function runTests() {
           console.log(`   ✅ ${currentTest} (${mode})`);
           testStep++;
 
-          // Navigate to a real page
+          // Navigate to a local page to avoid DNS issues
+          const testPage = 'file://' + path.join(__dirname, 'fixtures', 'test-network.html');
           setTimeout(() => sendRequest('tools/call', {
             name: 'browser_navigate',
-            arguments: { url: 'https://example.com' }
+            arguments: { url: testPage }
           }), 100);
           break;
 
-        case 4: // Navigate
+        case 5: // Navigate
           console.log(`   ✅ ${currentTest}`);
           testStep++;
 
@@ -114,7 +134,7 @@ async function runTests() {
           }), 500);
           break;
 
-        case 5: // Evaluate JS
+        case 6: // Evaluate JS
           const evalResult = JSON.parse(response.result.content[0].text);
           console.log(`   ✅ ${currentTest}`);
           console.log(`      Result: ${evalResult}`);
@@ -127,18 +147,18 @@ async function runTests() {
           }), 500);
           break;
 
-        case 6: // Screenshot
+        case 7: // Screenshot
           console.log(`   ✅ ${currentTest}`);
           testStep++;
 
           // Open new page
           setTimeout(() => sendRequest('tools/call', {
             name: 'browser_new_page',
-            arguments: { url: 'https://google.com' }
+            arguments: { url: 'about:blank' }
           }), 100);
           break;
 
-        case 7: // New Page
+        case 8: // New Page
           console.log(`   ✅ ${currentTest}`);
           testStep++;
 
@@ -150,7 +170,7 @@ async function runTests() {
 
           break;
 
-        case 8: // List Pages
+        case 9: // List Pages
           console.log(`   ✅ ${currentTest}`);
           testStep++;
 
@@ -161,7 +181,7 @@ async function runTests() {
           }), 100);
           break;
 
-        case 9: // Wait
+        case 10: // Wait
           console.log(`   ✅ ${currentTest}`);
           testStep++;
 
@@ -172,7 +192,7 @@ async function runTests() {
             console.log('✅ Test Results:');
             console.log('   • MCP protocol communication');
             console.log('   • Browser launch (standalone mode)');
-            console.log('   • Page navigation (example.com)');
+            console.log('   • Page navigation (local file)');
             console.log('   • JavaScript evaluation');
             console.log('   • Screenshot capture');
             console.log('   • Multi-page management');

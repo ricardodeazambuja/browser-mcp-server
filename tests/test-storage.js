@@ -37,10 +37,24 @@ rl.on('line', (line) => {
     try {
         const response = JSON.parse(line);
         if (response.method === 'notifications/resources/list_changed') return;
+        if (response.method === 'notifications/tools/list_changed') return;
         if (response.error) {
             console.error('❌ Error:', response.error.message);
             process.exit(1);
         }
+        
+        // Check for application-level errors in the result content
+        if (response.result && response.result.content && response.result.content[0] && response.result.content[0].text && response.result.content[0].text.startsWith('❌')) {
+            // Allow Service Worker step to fail at app-level and reach verify
+            const currentTest = steps[testStep];
+            if (currentTest && currentTest.name === 'Get Service Workers') {
+                handleResponse(response);
+                return;
+            }
+            console.error(`❌ Failed with app error: ${response.result.content[0].text}`);
+            process.exit(1);
+        }
+
         if (response.result && response.id) {
             handleResponse(response);
         }
@@ -83,6 +97,24 @@ const steps = [
             protocolVersion: '2024-11-05',
             capabilities: {},
             clientInfo: { name: 'storage-test', version: '1.0.0' }
+        }),
+        verify: () => { }
+    },
+    {
+        name: 'Load Storage Module',
+        method: 'tools/call',
+        params: () => ({
+            name: 'browser_manage_modules',
+            arguments: { action: 'load', module: 'storage' }
+        }),
+        verify: () => { }
+    },
+    {
+        name: 'Load Advanced Module',
+        method: 'tools/call',
+        params: () => ({
+            name: 'browser_manage_modules',
+            arguments: { action: 'load', module: 'advanced' }
         }),
         verify: () => { }
     },
@@ -174,7 +206,7 @@ const steps = [
         verify: (res) => {
             const text = res.result.content[0].text;
             // Should list service workers, indicate none/not supported, or error
-            if (!text.includes('Service Worker') && !text.includes('supported') && !text.includes('No service') && !text.includes('Error') && !text.includes('CDP Error')) {
+            if (!text.includes('Service Worker') && !text.includes('supported') && !text.includes('No service') && !text.includes('Error') && !text.includes('CDP Error') && !text.includes('Protocol error')) {
                 throw new Error('Unexpected response: ' + text.substring(0, 100));
             }
         }

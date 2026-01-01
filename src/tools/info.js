@@ -1,6 +1,6 @@
 const { connectToBrowser } = require('../browser');
 
-const definitions = [
+const coreDefinitions = [
     {
         name: 'browser_screenshot',
         description: 'Take a screenshot of the current page (see browser_docs)',
@@ -14,19 +14,6 @@ const definitions = [
         }
     },
     {
-        name: 'browser_get_text',
-        description: 'Get text content from an element (see browser_docs)',
-        inputSchema: {
-            type: 'object',
-            properties: {
-                selector: { type: 'string', description: 'Playwright selector for the element' }
-            },
-            required: ['selector'],
-            additionalProperties: false,
-            $schema: 'http://json-schema.org/draft-07/schema#'
-        }
-    },
-    {
         name: 'browser_evaluate',
         description: 'Execute JavaScript in the browser context (see browser_docs)',
         inputSchema: {
@@ -35,6 +22,50 @@ const definitions = [
                 code: { type: 'string', description: 'JavaScript code to execute' }
             },
             required: ['code'],
+            additionalProperties: false,
+            $schema: 'http://json-schema.org/draft-07/schema#'
+        }
+    }
+];
+
+const coreHandlers = {
+    browser_screenshot: async (args) => {
+        const { page } = await connectToBrowser();
+        const screenshot = await page.screenshot({
+            fullPage: args.fullPage || false,
+            type: 'png'
+        });
+        return {
+            content: [{
+                type: 'image',
+                data: screenshot.toString('base64'),
+                mimeType: 'image/png'
+            }]
+        };
+    },
+
+    browser_evaluate: async (args) => {
+        const { page } = await connectToBrowser();
+        const result = await page.evaluate(args.code);
+        return {
+            content: [{
+                type: 'text',
+                text: JSON.stringify(result, null, 2)
+            }]
+        };
+    }
+};
+
+const optionalDefinitions = [
+    {
+        name: 'browser_get_text',
+        description: 'Get text content from an element (see browser_docs)',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                selector: { type: 'string', description: 'Playwright selector for the element' }
+            },
+            required: ['selector'],
             additionalProperties: false,
             $schema: 'http://json-schema.org/draft-07/schema#'
         }
@@ -63,37 +94,11 @@ const definitions = [
     }
 ];
 
-const handlers = {
-    browser_screenshot: async (args) => {
-        const { page } = await connectToBrowser();
-        const screenshot = await page.screenshot({
-            fullPage: args.fullPage || false,
-            type: 'png'
-        });
-        return {
-            content: [{
-                type: 'image',
-                data: screenshot.toString('base64'),
-                mimeType: 'image/png'
-            }]
-        };
-    },
-
+const optionalHandlers = {
     browser_get_text: async (args) => {
         const { page } = await connectToBrowser();
         const text = await page.textContent(args.selector);
         return { content: [{ type: 'text', text }] };
-    },
-
-    browser_evaluate: async (args) => {
-        const { page } = await connectToBrowser();
-        const result = await page.evaluate(args.code);
-        return {
-            content: [{
-                type: 'text',
-                text: JSON.stringify(result, null, 2)
-            }]
-        };
     },
 
     browser_get_dom: async (args) => {
@@ -136,4 +141,11 @@ const handlers = {
     }
 };
 
-module.exports = { definitions, handlers };
+module.exports = {
+    definitions: [...coreDefinitions, ...optionalDefinitions],
+    handlers: { ...coreHandlers, ...optionalHandlers },
+    coreDefinitions,
+    coreHandlers,
+    optionalDefinitions,
+    optionalHandlers
+};

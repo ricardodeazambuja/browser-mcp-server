@@ -19,7 +19,7 @@ function sendRequest(proc, method, params = {}) {
     params
   };
 
-  console.log(`\n➡️  Sending: ${method}`);
+  console.log(`\n\u27A1 Sending: ${method}`);
   proc.stdin.write(JSON.stringify(request) + '\n');
   return id;
 }
@@ -31,7 +31,7 @@ function sendNotification(proc, method, params = {}) {
     params
   };
 
-  console.log(`\n➡️  Sending notification: ${method}`);
+  console.log(`\n\u27A1 Sending notification: ${method}`);
   proc.stdin.write(JSON.stringify(notification) + '\n');
 }
 
@@ -52,16 +52,25 @@ async function runTests() {
   const responses = new Map();
   let testsCompleted = 0;
   let toolCount = 0;
-  const totalTests = 3;
+  const totalTests = 4;
 
   rl.on('line', (line) => {
     try {
       const response = JSON.parse(line);
-      console.log(`\n⬅️  Response (id=${response.id}):`);
+      if (response.method === 'notifications/tools/list_changed') return;
+
+      console.log(`\n\u2B05 Response (id=${response.id}):`);
 
       if (response.error) {
         console.log(`   ❌ Error: ${response.error.message}`);
+        process.exit(1);
       } else if (response.result) {
+        // Check for application-level errors
+        if (response.result.content && response.result.content[0] && response.result.content[0].text && response.result.content[0].text.startsWith('❌')) {
+            console.log(`   ❌ Failed with app error: ${response.result.content[0].text}`);
+            process.exit(1);
+        }
+
         if (response.id === 1) {
           // Initialize response
           console.log(`   ✅ Protocol: ${response.result.protocolVersion}`);
@@ -83,13 +92,24 @@ async function runTests() {
           });
           testsCompleted++;
 
+          // Load advanced module for health check
+          setTimeout(() => sendRequest(proc, 'tools/call', {
+            name: 'browser_manage_modules',
+            arguments: { action: 'load', module: 'advanced' }
+          }), 100);
+
+        } else if (response.id === 3) {
+          // Load module response
+          console.log(`   ✅ Load advanced module`);
+          testsCompleted++;
+
           // Test health check (actual browser operation)
           setTimeout(() => sendRequest(proc, 'tools/call', {
             name: 'browser_health_check',
             arguments: {}
           }), 100);
 
-        } else if (response.id === 3) {
+        } else if (response.id === 4) {
           // Health check response
           if (response.result.content && response.result.content[0]) {
             console.log(`   ✅ Health Check Result:`);
@@ -103,9 +123,8 @@ async function runTests() {
             console.log(`\n✅ All tests passed! (${testsCompleted}/${totalTests})`);
             console.log('\n📊 Test Summary:');
             console.log('   ✅ MCP Protocol initialization');
-            console.log(`   ✅ Tools listing (${toolCount} tools)`);
-
-
+            console.log(`   ✅ Tools listing (Initial: ${toolCount} tools)`);
+            console.log('   ✅ Module loading (advanced)');
             console.log('   ✅ Browser automation (health check)');
             console.log('\n🎉 MCP Server is fully functional!\n');
             proc.kill();

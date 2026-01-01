@@ -253,135 +253,87 @@ gemini mcp add --timeout 30000 browser node /path/to/src/index.js
 gemini mcp add --trust browser node /path/to/src/index.js
 ```
 
-## Available Tools (63)
+## 🚀 Dynamic Module System (The "Token Diet")
 
-### Documentation
-1. **browser_docs(toolName?)** - Get detailed docs, return schemas, examples, and caveats for any tool
+To save tokens and reduce the cognitive load on the LLM, this server uses a **Micro-Kernel architecture**. Only 6 core tools are loaded by default. All other 57+ power-user tools are available as on-demand modules.
 
-### Multi-Page Management
-2. **browser_list_pages()** - List all open tabs/pages
-3. **browser_new_page(url?)** - Open a new tab
-4. **browser_switch_page(index)** - Switch active tab
-5. **browser_close_page(index?)** - Close a tab
+### The "Minimalist 6" Core (Always Available)
+1. **browser_docs(toolName?)** - Discovery & detailed on-demand documentation
+2. **browser_manage_modules(action, module?)** - List, load, or unload power-user modules
+3. **browser_navigate(url)** - Navigate to a URL
+4. **browser_action(action, selector?, text?, x?, y?)** - Consolidated interaction (click, type, hover, scroll, focus)
+5. **browser_screenshot(fullPage?)** - Capture visual feedback
+6. **browser_evaluate(code)** - JavaScript execution escape hatch
 
-### Media Awareness & Control
-6. **browser_get_media_summary()** - List all audio/video elements with state
-7. **browser_get_audio_analysis(durationMs?, selector?)** - Analyze audio output (volume, spectrum)
-8. **browser_control_media(selector, action, value?)** - Play, pause, mute, seek
-
-### Navigation & Interaction
-9. **browser_navigate(url)** - Navigate to a URL
-10. **browser_click(selector)** - Click an element (selector-based)
-11. **browser_type(selector, text)** - Type text into an input
-12. **browser_scroll(x?, y?)** - Scroll the page (generic)
-13. **browser_reload()** - Reload current page
-14. **browser_go_back()** - Navigate back
-15. **browser_go_forward()** - Navigate forward
-16. **browser_wait(ms)** - Pause execution
-
-### Low-Level Interaction
-17. **browser_mouse_move(x, y)** - Move mouse to pixel coordinates
-18. **browser_mouse_click(x?, y?, button?, count?)** - Click at pixel coordinates
-19. **browser_mouse_drag(fromX, fromY, toX, toY)** - Drag and drop
-20. **browser_mouse_wheel(deltaX, deltaY)** - Scroll mouse wheel
-21. **browser_press_key(key)** - Send keyboard event (e.g. "Enter")
-
-### Information Gathering
-22. **browser_screenshot(fullPage?)** - Capture screenshot
-23. **browser_get_text(selector)** - Get text from element
-24. **browser_get_dom(selector?)** - Get DOM structure
-25. **browser_read_page()** - Get page metadata (title, URL)
-26. **browser_evaluate(code)** - Execute JavaScript
-
-### Console Debugging
-27. **browser_console_start(level?)** - Start capturing logs
-28. **browser_console_get(filter?)** - Get captured logs
-29. **browser_console_clear()** - Clear logs and stop
-
-### Advanced Interaction
-30. **browser_hover(selector)** - Hover over element
-31. **browser_focus(selector)** - Focus element
-32. **browser_select(selector, values)** - Select dropdown options
-33. **browser_wait_for_selector(selector, timeout?)** - Wait for element
-34. **browser_resize_window(width, height)** - Resize window
-35. **browser_start_video_recording(path?)** - Start session recording
-36. **browser_stop_video_recording()** - Stop and save recording
-37. **browser_health_check()** - Verify browser connection
-
-## 🔬 Power User Tools (CDP-Based)
-
-Advanced diagnostic tools using Chrome DevTools Protocol for performance analysis, network debugging, security testing, and storage inspection. These 26 additional tools provide deep insights into browser internals.
-
-### Performance Profiling (8 tools)
-38. **browser_perf_start_profile(sampleInterval?)** - Start CPU profiling
-39. **browser_perf_stop_profile()** - Get CPU profile data with summary
-40. **browser_perf_take_heap_snapshot(reportProgress?)** - Capture memory snapshot
-41. **browser_perf_get_heap_usage()** - Current JavaScript heap statistics
-42. **browser_perf_get_metrics()** - Runtime metrics (DOM nodes, listeners, etc.)
-43. **browser_perf_get_performance_metrics()** - Web vitals (FCP, LCP, CLS, TTFB)
-44. **browser_perf_start_coverage(resetOnNavigation?)** - Track code coverage
-45. **browser_perf_stop_coverage()** - Get coverage results
-
-**Use Cases**: Memory leak detection, CPU profiling, performance optimization, code coverage analysis, web vitals monitoring
-
-### Network Analysis (7 tools)
-46. **browser_net_start_monitoring(patterns?)** - Monitor network requests
-47. **browser_net_get_requests(filter?)** - Get captured requests with timing
-48. **browser_net_stop_monitoring()** - Stop monitoring and clear log
-49. **browser_net_export_har(includeContent?)** - Export HTTP Archive log
-50. **browser_net_get_websocket_frames(requestId)** - Inspect WebSocket frames
-51. **browser_net_set_request_blocking(patterns)** - Block URL patterns
-52. **browser_net_emulate_conditions(offline, latency, download, upload)** - Network throttling
-
-**Use Cases**: API debugging, HAR export, WebSocket debugging, performance testing, request blocking, network throttling
-
-### Security Testing (6 tools)
-53. **browser_sec_get_security_headers()** - Inspect security HTTP headers
-54. **browser_sec_get_certificate_info()** - TLS/SSL certificate details
-55. **browser_sec_detect_mixed_content()** - Find HTTP resources on HTTPS pages
-56. **browser_sec_start_csp_monitoring()** - Monitor CSP violations
-57. **browser_sec_get_csp_violations()** - Get violation log
-58. **browser_sec_stop_csp_monitoring()** - Stop monitoring
-
-**Use Cases**: Security audits, CSP debugging, HTTPS migration, certificate validation, mixed content detection
-
-### Storage & Service Workers (5 tools)
-59. **browser_storage_get_indexeddb(databaseName?, objectStoreName?)** - Inspect IndexedDB
-60. **browser_storage_get_cache_storage(cacheName?)** - List Cache Storage entries
-61. **browser_storage_delete_cache(cacheName)** - Delete cache
-62. **browser_storage_get_service_workers()** - Service worker state
-63. **browser_storage_unregister_service_worker(scopeURL)** - Unregister worker
-
-**Use Cases**: IndexedDB inspection, Cache Storage management, Service Worker debugging, offline functionality testing
-
-### Getting Started with CDP Tools
+### How to use Power-User Tools
+When the LLM needs advanced features, it dynamically "learns" them by loading a module:
 
 ```javascript
-// Start CPU profiling
-browser_perf_start_profile({})
-// ... perform actions to profile ...
-browser_perf_stop_profile({})  // Get results
+// 1. List available modules
+browser_manage_modules({ action: 'list' })
 
-// Monitor network activity
+// 2. Load the network module
+browser_manage_modules({ action: 'load', module: 'network' })
+
+// 3. Now 7 new network tools are available in the context!
 browser_net_start_monitoring({})
-// ... navigate and interact ...
-browser_net_get_requests({ filter: 'api' })
-browser_net_export_har({})
-
-// Security audit
-browser_sec_get_security_headers({})
-browser_sec_start_csp_monitoring({})
-// ... trigger violations ...
-browser_sec_get_csp_violations({})
-
-// Inspect storage
-browser_storage_get_indexeddb({ databaseName: 'myDB' })
-browser_storage_get_cache_storage({ cacheName: 'my-cache-v1' })
 ```
 
-**Note**: All CDP tools have comprehensive documentation available via `browser_docs({ toolName: 'browser_perf_start_profile' })`.
+---
 
-## On-Demand Documentation
+## Available Modules
+
+### 🌐 Network Analysis (`network`)
+- **browser_net_start_monitoring** - Monitor network requests
+- **browser_net_get_requests** - Get captured requests with timing
+- **browser_net_stop_monitoring** - Stop monitoring and clear log
+- **browser_net_export_har** - Export HTTP Archive log
+- **browser_net_get_websocket_frames** - Inspect WebSocket frames
+- **browser_net_set_request_blocking** - Block URL patterns
+- **browser_net_emulate_conditions** - Network throttling
+
+### 🔬 Performance Profiling (`performance`)
+- **browser_perf_start_profile** - Start CPU profiling
+- **browser_perf_stop_profile** - Get CPU profile data
+- **browser_perf_take_heap_snapshot** - Capture memory snapshot
+- **browser_perf_get_heap_usage** - JS heap statistics
+- **browser_perf_get_metrics** - Runtime metrics
+- **browser_perf_get_performance_metrics** - Web vitals (FCP, LCP, etc.)
+- **browser_perf_start_coverage** - Track code coverage
+- **browser_perf_stop_coverage** - Get coverage results
+
+### 🔒 Security Testing (`security`)
+- **browser_sec_get_security_headers** - Inspect security headers
+- **browser_sec_get_certificate_info** - TLS/SSL certificate details
+- **browser_sec_detect_mixed_content** - Find insecure resources
+- **browser_sec_start_csp_monitoring** - Monitor CSP violations
+- **browser_sec_get_csp_violations** - Get violation log
+- **browser_sec_stop_csp_monitoring** - Stop monitoring
+
+### 💾 Storage & Service Workers (`storage`)
+- **browser_storage_get_indexeddb** - Inspect IndexedDB
+- **browser_storage_get_cache_storage** - List Cache Storage entries
+- **browser_storage_delete_cache** - Delete cache
+- **browser_storage_get_service_workers** - Service worker state
+- **browser_storage_unregister_service_worker** - Unregister worker
+
+### 🎵 Media Awareness & Control (`media`)
+- **browser_get_media_summary** - List all audio/video elements
+- **browser_get_audio_analysis** - Analyze audio (volume, spectrum)
+- **browser_control_media** - Play, pause, mute, seek
+
+### 🛠️ Advanced Tools (`advanced`)
+- **Multi-Tab**: `browser_list_pages`, `browser_new_page`, `browser_switch_page`, `browser_close_page`
+- **Low-Level**: `browser_mouse_move`, `browser_mouse_click`, `browser_mouse_drag`, `browser_mouse_wheel`, `browser_press_key`
+- **Console**: `browser_console_start`, `browser_console_get`, `browser_console_clear`
+- **Utilities**: `browser_wait`, `browser_resize_window`, `browser_wait_for_selector`, `browser_health_check`
+- **Recording**: `browser_start_video_recording`, `browser_stop_video_recording`
+- **Extra Extraction**: `browser_get_text`, `browser_get_dom`, `browser_read_page`
+- **Legacy Navigation**: `browser_reload`, `browser_go_back`, `browser_go_forward`
+
+---
+
+## 📖 On-Demand Documentation
 
 The `browser_docs` tool provides comprehensive documentation for all browser tools **without increasing token overhead** in normal operations.
 

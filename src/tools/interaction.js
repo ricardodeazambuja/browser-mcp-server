@@ -1,9 +1,67 @@
 const { connectToBrowser } = require('../browser');
 
-const definitions = [
+const coreDefinitions = [
+    {
+        name: 'browser_action',
+        description: 'Perform interaction actions (click, type, hover, scroll, focus) (see browser_docs)',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                action: { 
+                    type: 'string', 
+                    enum: ['click', 'type', 'hover', 'scroll', 'focus'],
+                    description: 'The action to perform'
+                },
+                selector: { type: 'string', description: 'Selector for the element (required for most actions)' },
+                text: { type: 'string', description: 'Text to type (required for type action)' },
+                x: { type: 'number', description: 'Horizontal scroll position (for scroll action)' },
+                y: { type: 'number', description: 'Vertical scroll position (for scroll action)' }
+            },
+            required: ['action'],
+            additionalProperties: false,
+            $schema: 'http://json-schema.org/draft-07/schema#'
+        }
+    }
+];
+
+const coreHandlers = {
+    browser_action: async (args) => {
+        const { page } = await connectToBrowser();
+        const { action, selector, text, x, y } = args;
+
+        switch (action) {
+            case 'click':
+                if (!selector) throw new Error('Selector is required for click action');
+                await page.click(selector);
+                return { content: [{ type: 'text', text: `Clicked ${selector}` }] };
+            case 'type':
+                if (!selector) throw new Error('Selector is required for type action');
+                if (text === undefined) throw new Error('Text is required for type action');
+                await page.fill(selector, text);
+                return { content: [{ type: 'text', text: `Typed into ${selector}` }] };
+            case 'hover':
+                if (!selector) throw new Error('Selector is required for hover action');
+                await page.hover(selector);
+                return { content: [{ type: 'text', text: `Hovered over ${selector}` }] };
+            case 'focus':
+                if (!selector) throw new Error('Selector is required for focus action');
+                await page.focus(selector);
+                return { content: [{ type: 'text', text: `Focused ${selector}` }] };
+            case 'scroll':
+                await page.evaluate(({ x, y }) => {
+                    window.scrollTo(x || 0, y || 0);
+                }, { x, y });
+                return { content: [{ type: 'text', text: `Scrolled to (${x || 0}, ${y || 0})` }] };
+            default:
+                throw new Error(`Unknown action: ${action}`);
+        }
+    }
+};
+
+const optionalDefinitions = [
     {
         name: 'browser_click',
-        description: 'Click an element on the page using Playwright selector (see browser_docs)',
+        description: 'DEPRECATED: Use browser_action instead. Click an element (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -16,7 +74,7 @@ const definitions = [
     },
     {
         name: 'browser_type',
-        description: 'Type text into an input field (see browser_docs)',
+        description: 'DEPRECATED: Use browser_action instead. Type text into an input field (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -30,7 +88,7 @@ const definitions = [
     },
     {
         name: 'browser_hover',
-        description: 'Hover over an element (see browser_docs)',
+        description: 'DEPRECATED: Use browser_action instead. Hover over an element (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -43,7 +101,7 @@ const definitions = [
     },
     {
         name: 'browser_focus',
-        description: 'Focus an element (see browser_docs)',
+        description: 'DEPRECATED: Use browser_action instead. Focus an element (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -70,7 +128,7 @@ const definitions = [
     },
     {
         name: 'browser_scroll',
-        description: 'Scroll the page (see browser_docs)',
+        description: 'DEPRECATED: Use browser_action instead. Scroll the page (see browser_docs)',
         inputSchema: {
             type: 'object',
             properties: {
@@ -83,7 +141,7 @@ const definitions = [
     }
 ];
 
-const handlers = {
+const optionalHandlers = {
     browser_click: async (args) => {
         const { page } = await connectToBrowser();
         await page.click(args.selector);
@@ -123,4 +181,11 @@ const handlers = {
     }
 };
 
-module.exports = { definitions, handlers };
+module.exports = {
+    definitions: [...coreDefinitions, ...optionalDefinitions],
+    handlers: { ...coreHandlers, ...optionalHandlers },
+    coreDefinitions,
+    coreHandlers,
+    optionalDefinitions,
+    optionalHandlers
+};
