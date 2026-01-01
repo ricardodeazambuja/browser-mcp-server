@@ -60,7 +60,11 @@ class BrowserMCPServer {
         debugLog(`Initialize with protocol: ${request.params.protocolVersion}`);
         this.respond(request.id, {
             protocolVersion: request.params.protocolVersion || MCP_PROTOCOL_VERSION,
-            capabilities: { tools: {} },
+            capabilities: { 
+                tools: {
+                    listChanged: true
+                } 
+            },
             serverInfo: {
                 name: 'browser-automation-playwright',
                 version: version

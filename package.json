@@ -1,6 +1,6 @@
 {
   "name": "@ricardodeazambuja/browser-mcp-server",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Universal browser automation MCP server using Playwright. Works with Antigravity, Claude Desktop, and any MCP client.",
   "main": "src/index.js",
   "bin": {
@@ -45,6 +45,7 @@
     "LICENSE",
     "CHANGELOG-v1.3.0.md",
     "CHANGELOG-v1.4.0.md",
+    "CHANGELOG-v1.5.0.md",
     "tests/",
     "plugins/"
   ]

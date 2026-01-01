@@ -12,6 +12,20 @@ With a large server like the Browser MCP Server (63+ tools), this creates a sign
 ## The Solution: Dynamic Module Loading
 Instead of loading all 63 tools at startup, we use a **Lazy Loading** strategy combined with the MCP **Notification** system.
 
+### 0. Capability Negotiation (Handshake)
+During the initial connection, the server must explicitly tell the client that it supports tool list updates. This is done in the `initialize` response (see [MCP Specification](https://modelcontextprotocol.io/specification/2025-06-18/server/tools#capabilities)):
+
+```json
+{
+  "capabilities": {
+    "tools": {
+      "listChanged": true
+    }
+  }
+}
+```
+Without this flag, compliant MCP clients may ignore the `notifications/tools/list_changed` event.
+
 ### 1. Initial State (The "Lean" Brain)
 The server starts by only exposing a small set of "Essential" tools (e.g., navigation, basic interaction, and documentation).
 - **Token Count**: ~1,500 tokens.

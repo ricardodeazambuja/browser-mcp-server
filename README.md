@@ -600,10 +600,10 @@ browser-mcp-server/
 ├── src/                              # Source code
 │   ├── index.js                      # Main server class
 │   ├── browser.js                    # Browser management
+│   ├── cdp.js                        # Chrome DevTools Protocol client
 │   ├── tools/                        # Tool modules
 │   └── utils.js                      # Utilities
 ├── tests/                            # Test suite
-├── plugins/                          # Plugin directory
 ├── package.json                      # npm package config
 ├── README.md                         # This file
 └── LICENSE                           # MIT license
@@ -633,6 +633,7 @@ Check `/tmp/mcp-browser-server.log` for detailed logs:
 - Implements MCP 2024-11-05 protocol
 - JSON-RPC 2.0 over stdio
 - Supports `initialize`, `notifications/initialized`, `tools/list`, `tools/call`
+- **Dynamic Capabilities**: Negotiates `listChanged` capability for dynamic tool loading (see [docs/mcp-dynamic-loading.md](docs/mcp-dynamic-loading.md))
 
 ### Browser Control
 - Uses Playwright for automation
@@ -714,13 +715,15 @@ MIT License - see LICENSE file
 
 ## Changelog
 
-### v1.4.0 (2026-01-01) ⭐ NEW
+### v1.5.0 (2026-01-01) ⭐ NEW
+- ✅ **The "Token Diet" Architecture**: Implemented a Micro-Kernel design reducing the initial footprint to only 6 core tools.
+- ✅ **Dynamic Module Loading**: Load/unload power-user modules (Network, Performance, etc.) on-demand.
+- ✅ **MCP Push Notifications**: Server signals client to refresh tools via `notifications/tools/list_changed`.
+- ✅ **Tool Consolidation**: Merged interaction tools into a single `browser_action` tool.
+- ✅ **Major Cleanup**: Centralized configuration and removed redundant boilerplate.
+
+### v1.4.0 (2025-12-30)
 - ✅ **Full Power User Suite**: Added 26 CDP-based tools for performance, network, security, and storage analysis (63 tools total)
-- ✅ **Version Unification**: Centralized version management to use `package.json` as the single source of truth
-- ✅ **Performance Profiling**: Added CPU profiling, heap snapshots, and web vitals monitoring
-- ✅ **Network Analysis**: Added request monitoring, HAR export, and WebSocket inspection
-- ✅ **Security Testing**: Added security header inspection, CSP monitoring, and certificate details
-- ✅ **Storage Inspection**: Added IndexedDB, Cache Storage, and Service Worker management
 
 ### v1.3.0 (2025-12-27)
 - ✅ **On-Demand Documentation**: New `browser_docs` tool provides detailed specs, return schemas, examples, and caveats for all 37 tools
