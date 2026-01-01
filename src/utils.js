@@ -4,6 +4,16 @@
 
 const fs = require('fs');
 const os = require('os');
+const path = require('path');
+
+// Get version from package.json
+let version = 'unknown';
+try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
+    version = pkg.version;
+} catch (error) {
+    // Fallback if package.json cannot be read
+}
 
 // Log file location
 const logFile = `${os.tmpdir()}/mcp-browser-server.log`;
@@ -116,5 +126,6 @@ module.exports = {
     loadPlaywright,
     getPlaywrightPath,
     findChromeExecutable,
-    logFile
+    logFile,
+    version
 };

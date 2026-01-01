@@ -51,6 +51,7 @@ async function runTests() {
 
   const responses = new Map();
   let testsCompleted = 0;
+  let toolCount = 0;
   const totalTests = 3;
 
   rl.on('line', (line) => {
@@ -75,7 +76,7 @@ async function runTests() {
 
         } else if (response.id === 2) {
           // Tools list response
-          const toolCount = response.result.tools.length;
+          toolCount = response.result.tools.length;
           console.log(`   ✅ Received ${toolCount} tools:`);
           response.result.tools.forEach(tool => {
             console.log(`      - ${tool.name}`);
@@ -102,7 +103,7 @@ async function runTests() {
             console.log(`\n✅ All tests passed! (${testsCompleted}/${totalTests})`);
             console.log('\n📊 Test Summary:');
             console.log('   ✅ MCP Protocol initialization');
-            console.log('   ✅ Tools listing (37 tools)');
+            console.log(`   ✅ Tools listing (${toolCount} tools)`);
 
 
             console.log('   ✅ Browser automation (health check)');

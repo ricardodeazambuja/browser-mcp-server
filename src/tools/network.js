@@ -5,7 +5,7 @@
 
 const { connectToBrowser } = require('../browser');
 const { getCDPSession } = require('../cdp');
-const { debugLog } = require('../utils');
+const { debugLog, version } = require('../utils');
 
 // Local state for network tools
 let networkRequests = [];
@@ -378,7 +378,7 @@ const handlers = {
                     version: '1.2',
                     creator: {
                         name: 'Browser MCP Server',
-                        version: '1.4.0'
+                        version: version
                     },
                     pages: [],
                     entries: networkRequests.map(r => ({

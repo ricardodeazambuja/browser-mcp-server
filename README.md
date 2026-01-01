@@ -496,7 +496,7 @@ browser_docs(toolName: "browser_get_audio_analysis")
 // ⚠️ Important: Requires CORS headers for cross-origin media
 
 // List all tools:
-browser_docs()  // Shows all 37 tools
+browser_docs()  // Shows all 63 tools
 ```
 
 ## How It Works
@@ -719,7 +719,7 @@ Check `/tmp/mcp-browser-server.log` for detailed logs:
 ## Comparison with Other Tools
 
 ### vs. Puppeteer MCP Servers
-- ✅ More tools (37 vs typical 8-10)
+- ✅ More tools (63 vs typical 8-10)
 - ✅ Console capture built-in
 - ✅ Better error messages
 - ✅ Hybrid mode (connect OR launch)
@@ -762,7 +762,15 @@ MIT License - see LICENSE file
 
 ## Changelog
 
-### v1.3.0 (2025-12-27) ⭐ NEW
+### v1.4.0 (2026-01-01) ⭐ NEW
+- ✅ **Full Power User Suite**: Added 26 CDP-based tools for performance, network, security, and storage analysis (63 tools total)
+- ✅ **Version Unification**: Centralized version management to use `package.json` as the single source of truth
+- ✅ **Performance Profiling**: Added CPU profiling, heap snapshots, and web vitals monitoring
+- ✅ **Network Analysis**: Added request monitoring, HAR export, and WebSocket inspection
+- ✅ **Security Testing**: Added security header inspection, CSP monitoring, and certificate details
+- ✅ **Storage Inspection**: Added IndexedDB, Cache Storage, and Service Worker management
+
+### v1.3.0 (2025-12-27)
 - ✅ **On-Demand Documentation**: New `browser_docs` tool provides detailed specs, return schemas, examples, and caveats for all 37 tools
 - ✅ **Modular Architecture**: Complete refactor into `src/` modules for better maintainability
 - ✅ **Plugin System**: New `plugins/` directory for extending functionality

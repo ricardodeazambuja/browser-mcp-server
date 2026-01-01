@@ -6,7 +6,7 @@
  */
 
 const readline = require('readline');
-const { debugLog } = require('./utils');
+const { debugLog, version } = require('./utils');
 const { tools, handlers } = require('./tools');
 const { getBrowserState } = require('./browser');
 
@@ -66,7 +66,7 @@ class BrowserMCPServer {
             capabilities: { tools: {} },
             serverInfo: {
                 name: 'browser-automation-playwright',
-                version: '1.4.0'
+                version: version
             }
         });
     }

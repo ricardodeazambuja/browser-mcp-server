@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node src/index.js",
     "install-browsers": "npx playwright install chromium",
-    "test": "node tests/test-mcp.js"
+    "test": "node tests/run-all.js"
   },
   "keywords": [
     "mcp",
@@ -44,6 +44,7 @@
     "README.md",
     "LICENSE",
     "CHANGELOG-v1.3.0.md",
+    "CHANGELOG-v1.4.0.md",
     "tests/",
     "plugins/"
   ]
